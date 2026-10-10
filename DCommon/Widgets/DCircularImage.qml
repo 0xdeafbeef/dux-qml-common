@@ -14,7 +14,8 @@ Rectangle {
     property real ringWidth: 0
     property color ringColor: Style.surfaceVariant
     property bool hasImage: imageSource !== ""
-    readonly property bool shouldProbe: imageSource !== "" && !imageSource.startsWith("image://")
+    // AnimatedImage decodes local files on the GUI thread whatever `asynchronous` says, so only formats that can animate get probed.
+    readonly property bool shouldProbe: imageSource !== "" && !imageSource.startsWith("image://") && /\.(gif|webp|apng)(\?.*)?$/i.test(imageSource)
     property bool isAnimated: false
     property bool probeSettled: false
     readonly property var activeImage: {
