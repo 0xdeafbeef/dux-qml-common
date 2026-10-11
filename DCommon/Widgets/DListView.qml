@@ -124,8 +124,8 @@ ListView {
     pressDelay: 0
     flickableDirection: Flickable.VerticalFlick
 
-    // QQmlDelegateModel can pool or release a delegate without hiding it, leaving a stale row
-    // painted at its old position. Hide anything the view no longer claims.
+    // A released delegate keeps painting at its old spot until deleteLater runs; Qt marks it with index -1.
+    // itemAtIndex is not a safe test: the view only remaps it at its window's next polish.
     Connections {
         target: listView.model?.objectName !== undefined ? listView.model : null
         ignoreUnknownSignals: true
@@ -158,14 +158,9 @@ ListView {
         }
 
         onTriggered: {
-            const kids = listView.contentItem.children;
-            for (let i = 0; i < kids.length; i++) {
-                const c = kids[i];
-                if (!c || c.index === undefined)
-                    continue;
-                const claimed = listView.itemAtIndex(c.index) === c;
-                if (c.visible !== claimed)
-                    c.visible = claimed;
+            for (const c of listView.contentItem.children) {
+                if (c?.index < 0 && c.visible)
+                    c.visible = false;
             }
             if (++frames >= 3)
                 running = false;
