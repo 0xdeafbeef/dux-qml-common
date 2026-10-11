@@ -64,12 +64,21 @@ ScrollBar {
     function thumbXFor(view, room) {
         let lead = view.width;
         let trail = 0;
-        for (const child of view.contentItem.children) {
-            if (!child.visible || child.width <= 0)
-                continue;
-            const padded = typeof child.positioningComplete === "function";
-            lead = Math.min(lead, view.contentItem.x + child.x + (padded ? child.leftPadding : 0));
-            trail = Math.max(trail, view.contentItem.x + child.x + child.width - (padded ? child.rightPadding : 0));
+        // item views can hold hundreds of delegates, so take the extent from childrenRect
+        if (typeof view.itemAtIndex === "function") {
+            const rect = view.contentItem.childrenRect;
+            if (rect.width > 0) {
+                lead = view.contentItem.x + rect.x;
+                trail = lead + rect.width;
+            }
+        } else {
+            for (const child of view.contentItem.children) {
+                if (!child.visible || child.width <= 0)
+                    continue;
+                const padded = typeof child.positioningComplete === "function";
+                lead = Math.min(lead, view.contentItem.x + child.x + (padded ? child.leftPadding : 0));
+                trail = Math.max(trail, view.contentItem.x + child.x + child.width - (padded ? child.rightPadding : 0));
+            }
         }
         lead = Math.max(0, Math.min(lead, view.width));
         trail = trail > 0 ? Math.min(trail, view.width) : view.width;
@@ -79,6 +88,12 @@ ScrollBar {
             return mirrored ? Style.spacingXXS - room : view.width + room - thickness - Style.spacingXXS;
         const gap = Math.min(Style.scrollbarGap, (gutter - thickness) / 2);
         return mirrored ? lead - gap - thickness : trail + gap;
+    }
+
+    // childrenRect notifies from inside its first read; primed here so thumbX never sees it
+    Component.onCompleted: {
+        if (typeof targetFlickable?.itemAtIndex === "function")
+            void targetFlickable.contentItem.childrenRect.width;
     }
 
     Binding on parent {
