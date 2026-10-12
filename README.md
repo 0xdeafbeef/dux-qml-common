@@ -93,6 +93,8 @@ For qmlls completion, create an empty `.qmlls.ini` at the repo root once (`touch
 
 `DSaturationValuePicker` edits saturation and value for a given hue. Bind its three values and handle `colorChanged(saturation, value)`. Arrow keys adjust by 1%, Shift adjusts by 10%, Home/End set saturation, and PageUp/PageDown adjust value.
 
+`DCarousel` is the M3 multi-browse carousel: a horizontal `ListView` that fills its width with large, medium and small items, start-aligned at rest and mirrored at the end of the scroll so the last item can reach full size. Set `model`, `preferredItemWidth` (the large size it aims for, default `height`) and `smallItemWidth` (`listItemHeight`). Its delegate is a `DCarouselItem`: children fill the item at its unmasked size and the item's rounded mask (`itemRadius`, `cornerRadiusXL`) crops them around the centre as it shrinks, so content does not squash. Read `maskWidth` to hide content that no longer fits, and handle `clicked`.
+
 `DColorButton` displays `swatchColor` with a selection check and emits `clicked`. Set `selected` to reflect the current color, and `tooltipText` to name the color instead of showing its hex value. `DColorSwatch.minPreviewAlpha: 0` displays the exact alpha over a checkerboard.
 
 ## The contract

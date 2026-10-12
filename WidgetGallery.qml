@@ -362,6 +362,33 @@ Column {
     }
 
     Section {
+        text: "Carousel"
+    }
+
+    DCarousel {
+        width: Math.min(root.width, 480)
+        height: 160
+        model: 12
+
+        delegate: DCarouselItem {
+            id: tile
+            required property int index
+
+            Rectangle {
+                anchors.fill: parent
+                color: [Theme.primaryContainer, Theme.secondaryContainer, Theme.tertiaryContainer][tile.index % 3]
+            }
+
+            StyledText {
+                anchors.centerIn: parent
+                text: tile.index + 1
+                font.pixelSize: Theme.fontSizeLarge
+                opacity: tile.maskWidth > width + Theme.spacingM ? 1 : 0
+            }
+        }
+    }
+
+    Section {
         text: I18n.tr("Location")
     }
 
