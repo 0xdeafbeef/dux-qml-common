@@ -33,6 +33,9 @@ Item {
 
         property var kept: []
         property bool banding: false
+        property bool clearPending: false
+        property bool secondClick: false
+        property int pressedIndex: -1
         property point pointerPosition: Qt.point(0, 0)
 
         parent: background.view.contentItem
@@ -53,22 +56,23 @@ Item {
                 mouse.accepted = false;
                 return;
             }
+            pressedIndex = item?.contains(point) ? index : -1;
+            secondClick = false;
             if (mouse.button === Qt.RightButton)
                 return;
-            if (!background.view.multiSelect) {
-                background.cleared();
-                return;
-            }
-            kept = (mouse.modifiers & (Qt.ControlModifier | Qt.ShiftModifier)) !== 0 ? background.selection.paths.slice() : [];
-            background.selection.keyboardCursor = false;
-            if (kept.length === 0)
-                background.cleared();
-            background.view.stopMomentum();
-            pointerPosition = mapToItem(background.view, mouse.x, mouse.y);
             band.originX = mouse.x;
             band.originY = mouse.y;
             band.pointX = mouse.x;
             band.pointY = mouse.y;
+            kept = background.view.multiSelect && (mouse.modifiers & (Qt.ControlModifier | Qt.ShiftModifier)) !== 0 ? background.selection.paths.slice() : [];
+            clearPending = kept.length === 0;
+            if (pressedIndex < 0)
+                background.applyPendingClear();
+            if (!background.view.multiSelect)
+                return;
+            background.selection.keyboardCursor = false;
+            background.view.stopMomentum();
+            pointerPosition = mapToItem(background.view, mouse.x, mouse.y);
             banding = true;
         }
 
@@ -79,15 +83,39 @@ Item {
             background.updateSelection();
         }
 
-        onReleased: banding = false
+        onReleased: mouse => {
+            banding = false;
+            if (mouse.button !== Qt.LeftButton || secondClick || pressedIndex < 0 || band.past)
+                return;
+            background.view.itemClicked(pressedIndex, mouse.modifiers);
+        }
+
         onCanceled: banding = false
+
+        onDoubleClicked: mouse => {
+            secondClick = true;
+            if (mouse.button !== Qt.LeftButton || pressedIndex < 0 || background.view.singleClickActivates)
+                return;
+            background.view.itemActivated(pressedIndex);
+        }
 
         onClicked: mouse => {
             if (mouse.button !== Qt.RightButton)
                 return;
             const point = mapToItem(background.view, mouse.x, mouse.y);
+            if (pressedIndex >= 0) {
+                background.view.itemContextMenu(pressedIndex, point.x, point.y, mouse.modifiers);
+                return;
+            }
             background.contextMenuRequested(point.x, point.y);
         }
+    }
+
+    function applyPendingClear() {
+        if (!area.clearPending)
+            return;
+        area.clearPending = false;
+        cleared();
     }
 
     function updateSelection() {
@@ -96,6 +124,7 @@ Item {
         band.pointY = point.y;
         if (!band.past)
             return;
+        applyPendingClear();
         const rect = Qt.rect(band.x, band.y, band.width, band.height);
         const paths = view.indicesIn(rect).map(index => view.model.get(index).path);
         selection.paths = area.kept.concat(paths.filter(path => !area.kept.includes(path)));

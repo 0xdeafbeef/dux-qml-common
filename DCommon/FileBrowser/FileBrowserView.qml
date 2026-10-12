@@ -107,6 +107,7 @@ FocusScope {
         if (parent === "")
             return;
         _stamp();
+        selectionModel.clear();
         _revealStarted = false;
         _pendingReveal = paths.filter(path => FilePaths.parentOf(path) === parent);
         if (parent === history.path) {
@@ -157,10 +158,10 @@ FocusScope {
         if (_pendingReveal.length === 0)
             return;
         const found = viewBody.reveal(_pendingReveal, _revealStarted);
-        if (found.length === 0)
-            return;
-        _revealStarted = true;
+        _revealStarted = _revealStarted || found.length > 0;
         _pendingReveal = _pendingReveal.filter(path => !found.includes(path));
+        if (_pendingReveal.length > 0)
+            directory.loadMore();
     }
 
     onShowHiddenChanged: optionsSettle.restart()
@@ -368,7 +369,10 @@ FocusScope {
                 onSortRequested: key => root.sortRequested(key)
                 onZoomRequested: (mode, level) => root.zoomRequested(mode, level)
                 onColumnResizeRequested: (id, width) => root.columnResizeRequested(id, width)
-                onFocusRequested: root.focusRequested()
+                onFocusRequested: {
+                    root._pendingReveal = [];
+                    root.focusRequested();
+                }
                 onRevealRequested: target => {
                     root.focusRequested();
                     root.reveal(target);
