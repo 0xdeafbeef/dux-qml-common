@@ -1,21 +1,21 @@
 {
   "%1 items": {
-    "%1 items": ""
+    "%1 items": "%1 Elemente"
   },
   "%1 selected": {
-    "%1 selected": ""
+    "%1 selected": "%1 ausgewählt"
   },
   "1 item": {
-    "1 item": ""
+    "1 item": "1 Element"
   },
   "1 selected": {
-    "1 selected": ""
+    "1 selected": "1 ausgewählt"
   },
   "A file with this name already exists. Do you want to overwrite it?": {
     "A file with this name already exists. Do you want to overwrite it?": "Eine Datei mit diesem Namen existiert bereits. Möchten Sie sie überschreiben?"
   },
   "A name cannot be empty or contain a slash": {
-    "A name cannot be empty or contain a slash": ""
+    "A name cannot be empty or contain a slash": "Ein Name darf nicht leer sein oder einen Schrägstrich enthalten"
   },
   "AM": {
     "AM": "AM"
@@ -27,19 +27,19 @@
     "Ascending": "Aufsteigend"
   },
   "B": {
-    "B": ""
+    "B": "B"
   },
   "Back": {
     "Back": "Zurück"
   },
   "Backspace": {
-    "Backspace": ""
+    "Backspace": "Rücktaste"
   },
   "Binary file": {
-    "Binary file": ""
+    "Binary file": "Binärdatei"
   },
   "Broken link": {
-    "Broken link": ""
+    "Broken link": "Defekter Link"
   },
   "Cancel": {
     "Cancel": "Abbrechen"
@@ -51,7 +51,7 @@
     "Clear": "Löschen"
   },
   "Clear the selection": {
-    "Clear the selection": ""
+    "Clear the selection": "Auswahl aufheben"
   },
   "Close": {
     "Close": "Schließen"
@@ -72,7 +72,7 @@
     "Create": "Erzeuge"
   },
   "Created": {
-    "Created": ""
+    "Created": "Erstellt"
   },
   "Decrease": {
     "Decrease": "Verringern"
@@ -90,7 +90,7 @@
     "Edit": "Bearbeiten"
   },
   "Enter": {
-    "Enter": ""
+    "Enter": "Eingabe"
   },
   "Enter filename...": {
     "Enter filename...": "Dateinamen eingeben..."
@@ -102,40 +102,40 @@
     "File Already Exists": "Datei existiert bereits"
   },
   "File System": {
-    "File System": ""
+    "File System": "Dateisystem"
   },
   "Files - %1": {
     "Files - %1": "Dateien - %1"
   },
   "Files are unavailable because the file service is not running": {
-    "Files are unavailable because the file service is not running": ""
+    "Files are unavailable because the file service is not running": "Dateien sind nicht verfügbar, da der Dateidienst nicht läuft"
   },
   "First %1 of %2": {
-    "First %1 of %2": ""
+    "First %1 of %2": "Erste %1 von %2"
   },
   "Folder": {
     "Folder": "Ordner"
   },
   "Folder name": {
-    "Folder name": ""
+    "Folder name": "Ordnername"
   },
   "Forward": {
-    "Forward": ""
+    "Forward": "Vorwärts"
   },
   "Fun": {
     "Fun": "Spaß"
   },
   "GB": {
-    "GB": ""
+    "GB": "GB"
   },
   "Grid view": {
-    "Grid view": ""
+    "Grid view": "Gitteransicht"
   },
   "Hibernate": {
     "Hibernate": "Ruhezustand"
   },
   "Hide keyboard": {
-    "Hide keyboard": ""
+    "Hide keyboard": "Tastatur ausblenden"
   },
   "Hide password": {
     "Hide password": "Passwort verbergen"
@@ -153,13 +153,13 @@
     "Home": "Home"
   },
   "Hour": {
-    "Hour": ""
+    "Hour": "Stunde"
   },
   "Increase": {
     "Increase": "Erhöhen"
   },
   "List view": {
-    "List view": ""
+    "List view": "Listenansicht"
   },
   "Location": {
     "Location": "Standort"
@@ -168,7 +168,7 @@
     "Log Out": "Ausloggen"
   },
   "MB": {
-    "MB": ""
+    "MB": "MB"
   },
   "Maximize": {
     "Maximize": "Maximieren"
@@ -180,7 +180,7 @@
     "Minimize": "Minimieren"
   },
   "Minute": {
-    "Minute": ""
+    "Minute": "Minute"
   },
   "Modified": {
     "Modified": "Geändert"
@@ -195,10 +195,10 @@
     "Navigation": "Navigation"
   },
   "New folder": {
-    "New folder": ""
+    "New folder": "Neuer Ordner"
   },
   "No locations found": {
-    "No locations found": ""
+    "No locations found": "Keine Orte gefunden"
   },
   "Numbers": {
     "Numbers": "Zahlen"
@@ -213,13 +213,13 @@
     "Overwrite": "Überschreiben"
   },
   "Owner": {
-    "Owner": ""
+    "Owner": "Besitzer"
   },
   "PM": {
     "PM": "PM"
   },
   "Permissions": {
-    "Permissions": ""
+    "Permissions": "Berechtigungen"
   },
   "Power Off": {
     "Power Off": "Ausschalten"
@@ -243,10 +243,10 @@
     "Restore": "Wiederherstellen"
   },
   "Review changes": {
-    "Review changes": ""
+    "Review changes": "Änderungen überprüfen"
   },
   "Saturation %1%, brightness %2%": {
-    "Saturation %1%, brightness %2%": ""
+    "Saturation %1%, brightness %2%": "Sättigung %1%, Helligkeit %2%"
   },
   "Save": {
     "Save": "Speichern"
@@ -258,19 +258,19 @@
     "Search...": "Suche..."
   },
   "Searching...": {
-    "Searching...": ""
+    "Searching...": "Suche..."
   },
   "Select File": {
     "Select File": "Datei auswählen"
   },
   "Select time": {
-    "Select time": ""
+    "Select time": "Zeit wählen"
   },
   "Shift": {
-    "Shift": ""
+    "Shift": "Umschalt"
   },
   "Show hidden files": {
-    "Show hidden files": ""
+    "Show hidden files": "Versteckte Dateien anzeigen"
   },
   "Show password": {
     "Show password": "Passwort anzeigen"
@@ -282,7 +282,7 @@
     "Sort By": "Sortieren nach"
   },
   "Space": {
-    "Space": ""
+    "Space": "Leertaste"
   },
   "Status": {
     "Status": "Status"
@@ -297,31 +297,31 @@
     "System": "System"
   },
   "TB": {
-    "TB": ""
+    "TB": "TB"
   },
   "This folder could not be opened": {
-    "This folder could not be opened": ""
+    "This folder could not be opened": "Dieser Ordner konnte nicht geöffnet werden"
   },
   "This folder is empty": {
-    "This folder is empty": ""
+    "This folder is empty": "Dieser Ordner ist leer"
   },
   "This folder no longer exists": {
-    "This folder no longer exists": ""
+    "This folder no longer exists": "Dieser Ordner existiert nicht mehr"
   },
   "This item already exists": {
-    "This item already exists": ""
+    "This item already exists": "Dieses Element existiert bereits"
   },
   "This item cannot be moved here directly": {
-    "This item cannot be moved here directly": ""
+    "This item cannot be moved here directly": "Dieses Element kann hier nicht direkt verschoben werden"
   },
   "This item could not be handled": {
-    "This item could not be handled": ""
+    "This item could not be handled": "Dieses Element konnte nicht verarbeitet werden"
   },
   "This item is in use": {
-    "This item is in use": ""
+    "This item is in use": "Dieses Element wird gerade verwendet"
   },
   "This item no longer exists": {
-    "This item no longer exists": ""
+    "This item no longer exists": "Dieses Element existiert nicht mehr"
   },
   "Type": {
     "Type": "Typ"
@@ -336,12 +336,12 @@
     "Workspace": "Arbeitsbereich"
   },
   "You do not have permission to do this": {
-    "You do not have permission to do this": ""
+    "You do not have permission to do this": "Sie haben keine Berechtigung, dies zu tun"
   },
   "You do not have permission to view this folder": {
-    "You do not have permission to view this folder": ""
+    "You do not have permission to view this folder": "Sie haben keine Berechtigung, diesen Ordner anzuzeigen"
   },
   "kB": {
-    "kB": ""
+    "kB": "kB"
   }
 }

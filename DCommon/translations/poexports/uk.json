@@ -1,21 +1,21 @@
 {
   "%1 items": {
-    "%1 items": ""
+    "%1 items": "%1 елементів"
   },
   "%1 selected": {
-    "%1 selected": ""
+    "%1 selected": "%1 вибрано"
   },
   "1 item": {
-    "1 item": ""
+    "1 item": "1 елемент"
   },
   "1 selected": {
-    "1 selected": ""
+    "1 selected": "1 вибрано"
   },
   "A file with this name already exists. Do you want to overwrite it?": {
     "A file with this name already exists. Do you want to overwrite it?": "Файл з такою назвою вже існує. Ви хочете перезаписати його?"
   },
   "A name cannot be empty or contain a slash": {
-    "A name cannot be empty or contain a slash": ""
+    "A name cannot be empty or contain a slash": "Ім'я не може бути порожнім або містити косу риску"
   },
   "AM": {
     "AM": "ДП"
@@ -27,19 +27,19 @@
     "Ascending": "За зростанням"
   },
   "B": {
-    "B": ""
+    "B": "Б"
   },
   "Back": {
     "Back": "Назад"
   },
   "Backspace": {
-    "Backspace": ""
+    "Backspace": "Назад"
   },
   "Binary file": {
-    "Binary file": ""
+    "Binary file": "Бінарний файл"
   },
   "Broken link": {
-    "Broken link": ""
+    "Broken link": "Пошкоджене посилання"
   },
   "Cancel": {
     "Cancel": "Скасувати"
@@ -51,7 +51,7 @@
     "Clear": "Очистити"
   },
   "Clear the selection": {
-    "Clear the selection": ""
+    "Clear the selection": "Очистити вибір"
   },
   "Close": {
     "Close": "Закрити"
@@ -72,7 +72,7 @@
     "Create": "Створити"
   },
   "Created": {
-    "Created": ""
+    "Created": "Створено"
   },
   "Decrease": {
     "Decrease": "Зменшити"
@@ -90,7 +90,7 @@
     "Edit": "Редагувати"
   },
   "Enter": {
-    "Enter": ""
+    "Enter": "Enter"
   },
   "Enter filename...": {
     "Enter filename...": "Введіть ім'я файлу..."
@@ -102,40 +102,40 @@
     "File Already Exists": "Файл вже існує"
   },
   "File System": {
-    "File System": ""
+    "File System": "Файлова система"
   },
   "Files - %1": {
     "Files - %1": "Файли - %1"
   },
   "Files are unavailable because the file service is not running": {
-    "Files are unavailable because the file service is not running": ""
+    "Files are unavailable because the file service is not running": "Файли недоступні, оскільки сервіс файлів не запущено"
   },
   "First %1 of %2": {
-    "First %1 of %2": ""
+    "First %1 of %2": "Перші %1 з %2"
   },
   "Folder": {
     "Folder": "Папка"
   },
   "Folder name": {
-    "Folder name": ""
+    "Folder name": "Назва теки"
   },
   "Forward": {
-    "Forward": ""
+    "Forward": "Вперед"
   },
   "Fun": {
     "Fun": "Розваги"
   },
   "GB": {
-    "GB": ""
+    "GB": "ГБ"
   },
   "Grid view": {
-    "Grid view": ""
+    "Grid view": "Вигляд сіткою"
   },
   "Hibernate": {
     "Hibernate": "Гібернація"
   },
   "Hide keyboard": {
-    "Hide keyboard": ""
+    "Hide keyboard": "Приховати клавіатуру"
   },
   "Hide password": {
     "Hide password": "Приховати пароль"
@@ -153,13 +153,13 @@
     "Home": "Головна"
   },
   "Hour": {
-    "Hour": ""
+    "Hour": "Година"
   },
   "Increase": {
     "Increase": "Збільшити"
   },
   "List view": {
-    "List view": ""
+    "List view": "Вигляд списком"
   },
   "Location": {
     "Location": "Розташування"
@@ -168,7 +168,7 @@
     "Log Out": "Вийти"
   },
   "MB": {
-    "MB": ""
+    "MB": "МБ"
   },
   "Maximize": {
     "Maximize": "Максимізувати"
@@ -180,7 +180,7 @@
     "Minimize": "Згорнути"
   },
   "Minute": {
-    "Minute": ""
+    "Minute": "Хвилина"
   },
   "Modified": {
     "Modified": "Змінено"
@@ -195,10 +195,10 @@
     "Navigation": "Навігація"
   },
   "New folder": {
-    "New folder": ""
+    "New folder": "Нова тека"
   },
   "No locations found": {
-    "No locations found": ""
+    "No locations found": "Локацій не знайдено"
   },
   "Numbers": {
     "Numbers": "Цифри"
@@ -213,13 +213,13 @@
     "Overwrite": "Перезаписати"
   },
   "Owner": {
-    "Owner": ""
+    "Owner": "Власник"
   },
   "PM": {
     "PM": "ПП"
   },
   "Permissions": {
-    "Permissions": ""
+    "Permissions": "Дозволи"
   },
   "Power Off": {
     "Power Off": "Вимкнути живлення"
@@ -243,10 +243,10 @@
     "Restore": "Відновити"
   },
   "Review changes": {
-    "Review changes": ""
+    "Review changes": "Переглянути зміни"
   },
   "Saturation %1%, brightness %2%": {
-    "Saturation %1%, brightness %2%": ""
+    "Saturation %1%, brightness %2%": "Насиченість %1%, яскравість %2%"
   },
   "Save": {
     "Save": "Зберегти"
@@ -258,19 +258,19 @@
     "Search...": "Пошук..."
   },
   "Searching...": {
-    "Searching...": ""
+    "Searching...": "Пошук..."
   },
   "Select File": {
     "Select File": "Вибрати файл"
   },
   "Select time": {
-    "Select time": ""
+    "Select time": "Вибрати час"
   },
   "Shift": {
-    "Shift": ""
+    "Shift": "Shift"
   },
   "Show hidden files": {
-    "Show hidden files": ""
+    "Show hidden files": "Показувати приховані файли"
   },
   "Show password": {
     "Show password": "Показати пароль"
@@ -282,7 +282,7 @@
     "Sort By": "Сортувати за"
   },
   "Space": {
-    "Space": ""
+    "Space": "Пробіл"
   },
   "Status": {
     "Status": "Статус"
@@ -297,31 +297,31 @@
     "System": "Система"
   },
   "TB": {
-    "TB": ""
+    "TB": "ТБ"
   },
   "This folder could not be opened": {
-    "This folder could not be opened": ""
+    "This folder could not be opened": "Цю теку не вдалося відкрити"
   },
   "This folder is empty": {
-    "This folder is empty": ""
+    "This folder is empty": "Ця тека порожня"
   },
   "This folder no longer exists": {
-    "This folder no longer exists": ""
+    "This folder no longer exists": "Цієї теки більше не існує"
   },
   "This item already exists": {
-    "This item already exists": ""
+    "This item already exists": "Цей елемент уже існує"
   },
   "This item cannot be moved here directly": {
-    "This item cannot be moved here directly": ""
+    "This item cannot be moved here directly": "Цей елемент не можна перемістити сюди безпосередньо"
   },
   "This item could not be handled": {
-    "This item could not be handled": ""
+    "This item could not be handled": "Цей елемент не вдалося обробити"
   },
   "This item is in use": {
-    "This item is in use": ""
+    "This item is in use": "Цей елемент використовується"
   },
   "This item no longer exists": {
-    "This item no longer exists": ""
+    "This item no longer exists": "Цього елемента більше не існує"
   },
   "Type": {
     "Type": "Тип"
@@ -336,12 +336,12 @@
     "Workspace": "Робочий простір"
   },
   "You do not have permission to do this": {
-    "You do not have permission to do this": ""
+    "You do not have permission to do this": "У вас немає прав для цього"
   },
   "You do not have permission to view this folder": {
-    "You do not have permission to view this folder": ""
+    "You do not have permission to view this folder": "У вас немає прав для перегляду цієї теки"
   },
   "kB": {
-    "kB": ""
+    "kB": "кБ"
   }
 }

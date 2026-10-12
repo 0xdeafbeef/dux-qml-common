@@ -1,21 +1,21 @@
 {
   "%1 items": {
-    "%1 items": ""
+    "%1 items": "%1 عناصر"
   },
   "%1 selected": {
-    "%1 selected": ""
+    "%1 selected": "تم تحديد %1"
   },
   "1 item": {
-    "1 item": ""
+    "1 item": "عنصر واحد"
   },
   "1 selected": {
-    "1 selected": ""
+    "1 selected": "تم تحديد 1"
   },
   "A file with this name already exists. Do you want to overwrite it?": {
     "A file with this name already exists. Do you want to overwrite it?": "يوجد ملف بهذا الاسم بالفعل. هل تريد استبداله؟"
   },
   "A name cannot be empty or contain a slash": {
-    "A name cannot be empty or contain a slash": ""
+    "A name cannot be empty or contain a slash": "لا يمكن أن يكون الاسم فارغاً أو يحتوي على شرطة مائلة"
   },
   "AM": {
     "AM": "صباحاً"
@@ -27,19 +27,19 @@
     "Ascending": "تصاعدي"
   },
   "B": {
-    "B": ""
+    "B": "ب"
   },
   "Back": {
     "Back": "رجوع"
   },
   "Backspace": {
-    "Backspace": ""
+    "Backspace": "Backspace"
   },
   "Binary file": {
-    "Binary file": ""
+    "Binary file": "ملف ثنائي"
   },
   "Broken link": {
-    "Broken link": ""
+    "Broken link": "رابط معطل"
   },
   "Cancel": {
     "Cancel": "إلغاء"
@@ -51,7 +51,7 @@
     "Clear": "مسح"
   },
   "Clear the selection": {
-    "Clear the selection": ""
+    "Clear the selection": "مسح التحديد"
   },
   "Close": {
     "Close": "اغلاق"
@@ -72,7 +72,7 @@
     "Create": "إنشاء"
   },
   "Created": {
-    "Created": ""
+    "Created": "تم الإنشاء"
   },
   "Decrease": {
     "Decrease": "إنقاص"
@@ -90,7 +90,7 @@
     "Edit": "تعديل"
   },
   "Enter": {
-    "Enter": ""
+    "Enter": "إدخال"
   },
   "Enter filename...": {
     "Enter filename...": "أدخل اسم الملف..."
@@ -102,40 +102,40 @@
     "File Already Exists": "الملف موجود بالفعل"
   },
   "File System": {
-    "File System": ""
+    "File System": "نظام الملفات"
   },
   "Files - %1": {
     "Files - %1": "الملفات - %1"
   },
   "Files are unavailable because the file service is not running": {
-    "Files are unavailable because the file service is not running": ""
+    "Files are unavailable because the file service is not running": "الملفات غير متوفرة لأن خدمة الملفات لا تعمل"
   },
   "First %1 of %2": {
-    "First %1 of %2": ""
+    "First %1 of %2": "أول %1 من %2"
   },
   "Folder": {
     "Folder": "مجلد"
   },
   "Folder name": {
-    "Folder name": ""
+    "Folder name": "اسم المجلد"
   },
   "Forward": {
-    "Forward": ""
+    "Forward": "إلى الأمام"
   },
   "Fun": {
     "Fun": "مرح"
   },
   "GB": {
-    "GB": ""
+    "GB": "جيجابايت"
   },
   "Grid view": {
-    "Grid view": ""
+    "Grid view": "عرض الشبكة"
   },
   "Hibernate": {
     "Hibernate": "إسبات"
   },
   "Hide keyboard": {
-    "Hide keyboard": ""
+    "Hide keyboard": "إخفاء لوحة المفاتيح"
   },
   "Hide password": {
     "Hide password": "إخفاء كلمة المرور"
@@ -153,13 +153,13 @@
     "Home": "الرئيسية"
   },
   "Hour": {
-    "Hour": ""
+    "Hour": "ساعة"
   },
   "Increase": {
     "Increase": "زيادة"
   },
   "List view": {
-    "List view": ""
+    "List view": "عرض القائمة"
   },
   "Location": {
     "Location": "الموقع"
@@ -168,7 +168,7 @@
     "Log Out": "تسجيل الخروج"
   },
   "MB": {
-    "MB": ""
+    "MB": "ميجابايت"
   },
   "Maximize": {
     "Maximize": "تكبير"
@@ -180,7 +180,7 @@
     "Minimize": "تصغير"
   },
   "Minute": {
-    "Minute": ""
+    "Minute": "دقيقة"
   },
   "Modified": {
     "Modified": "معدل"
@@ -195,10 +195,10 @@
     "Navigation": "التنقل"
   },
   "New folder": {
-    "New folder": ""
+    "New folder": "مجلد جديد"
   },
   "No locations found": {
-    "No locations found": ""
+    "No locations found": "لم يتم العثور على مواقع"
   },
   "Numbers": {
     "Numbers": "أرقام"
@@ -213,13 +213,13 @@
     "Overwrite": "استبدال"
   },
   "Owner": {
-    "Owner": ""
+    "Owner": "المالك"
   },
   "PM": {
     "PM": "م"
   },
   "Permissions": {
-    "Permissions": ""
+    "Permissions": "الأذونات"
   },
   "Power Off": {
     "Power Off": "إيقاف التشغيل"
@@ -243,10 +243,10 @@
     "Restore": "استعادة"
   },
   "Review changes": {
-    "Review changes": ""
+    "Review changes": "مراجعة التغييرات"
   },
   "Saturation %1%, brightness %2%": {
-    "Saturation %1%, brightness %2%": ""
+    "Saturation %1%, brightness %2%": "التشبع %1%، السطوع %2%"
   },
   "Save": {
     "Save": "حفظ"
@@ -258,19 +258,19 @@
     "Search...": "ابحث هنا..."
   },
   "Searching...": {
-    "Searching...": ""
+    "Searching...": "جارٍ البحث..."
   },
   "Select File": {
     "Select File": "اختيار ملف"
   },
   "Select time": {
-    "Select time": ""
+    "Select time": "اختر الوقت"
   },
   "Shift": {
-    "Shift": ""
+    "Shift": "Shift"
   },
   "Show hidden files": {
-    "Show hidden files": ""
+    "Show hidden files": "إظهار الملفات المخفية"
   },
   "Show password": {
     "Show password": "عرض كلمة المرور"
@@ -282,7 +282,7 @@
     "Sort By": "ترتيب حسب"
   },
   "Space": {
-    "Space": ""
+    "Space": "Space"
   },
   "Status": {
     "Status": "الحالة"
@@ -297,31 +297,31 @@
     "System": "النظام"
   },
   "TB": {
-    "TB": ""
+    "TB": "تيرابايت"
   },
   "This folder could not be opened": {
-    "This folder could not be opened": ""
+    "This folder could not be opened": "تعذر فتح هذا المجلد"
   },
   "This folder is empty": {
-    "This folder is empty": ""
+    "This folder is empty": "هذا المجلد فارغ"
   },
   "This folder no longer exists": {
-    "This folder no longer exists": ""
+    "This folder no longer exists": "هذا المجلد لم يعد موجوداً"
   },
   "This item already exists": {
-    "This item already exists": ""
+    "This item already exists": "هذا العنصر موجود بالفعل"
   },
   "This item cannot be moved here directly": {
-    "This item cannot be moved here directly": ""
+    "This item cannot be moved here directly": "لا يمكن نقل هذا العنصر إلى هنا مباشرة"
   },
   "This item could not be handled": {
-    "This item could not be handled": ""
+    "This item could not be handled": "تعذر التعامل مع هذا العنصر"
   },
   "This item is in use": {
-    "This item is in use": ""
+    "This item is in use": "هذا العنصر قيد الاستخدام"
   },
   "This item no longer exists": {
-    "This item no longer exists": ""
+    "This item no longer exists": "هذا العنصر لم يعد موجوداً"
   },
   "Type": {
     "Type": "نوع"
@@ -336,12 +336,12 @@
     "Workspace": "سطح المكتب"
   },
   "You do not have permission to do this": {
-    "You do not have permission to do this": ""
+    "You do not have permission to do this": "ليس لديك إذن للقيام بذلك"
   },
   "You do not have permission to view this folder": {
-    "You do not have permission to view this folder": ""
+    "You do not have permission to view this folder": "ليس لديك إذن لعرض هذا المجلد"
   },
   "kB": {
-    "kB": ""
+    "kB": "كيلوبايت"
   }
 }
