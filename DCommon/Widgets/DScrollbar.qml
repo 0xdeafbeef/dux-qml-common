@@ -10,13 +10,14 @@ ScrollBar {
     property real topMargin: 0
 
     property bool _scrollBarActive: false
+    property bool _extentPrimed: false
     property alias hideTimer: hideScrollBarTimer
     readonly property Item scrollTarget: targetFlickable ?? parent
     readonly property bool scrollTargetMoving: !!scrollTarget && (scrollTarget.moving || scrollTarget.flicking || scrollTarget.isMomentumActive === true)
     readonly property bool shouldShow: pressed || hovered || active || scrollTargetMoving || _scrollBarActive
     readonly property bool scrollable: !!scrollTarget && scrollTarget.contentHeight > scrollTarget.height
     readonly property var placement: targetFlickable && policy !== ScrollBar.AlwaysOff ? placementFor(targetFlickable) : null
-    readonly property real thumbX: placement ? thumbXFor(targetFlickable, placement.room) : 0
+    readonly property real thumbX: placement && _extentPrimed ? thumbXFor(targetFlickable, placement.room) : 0
 
     function managesChildren(item) {
         return typeof item.positioningComplete === "function" || item.layoutDirection !== undefined || typeof item.itemAt === "function";
@@ -94,6 +95,7 @@ ScrollBar {
     Component.onCompleted: {
         if (typeof targetFlickable?.itemAtIndex === "function")
             void targetFlickable.contentItem.childrenRect.width;
+        _extentPrimed = true;
     }
 
     Binding on parent {
