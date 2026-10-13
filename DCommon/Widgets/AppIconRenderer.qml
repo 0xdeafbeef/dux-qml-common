@@ -1,3 +1,5 @@
+pragma ComponentBehavior: Bound
+
 import QtQuick
 import Quickshell.Widgets
 import qs.DCommon.Common
@@ -55,32 +57,44 @@ Item {
 
     visible: iconValue !== undefined && iconValue !== ""
 
-    DIcon {
+    // Load only the face in use; a hidden empty Text slows every move of its parents.
+    Loader {
         anchors.centerIn: parent
-        name: root.materialName
-        size: root.iconSize - root.materialIconSizeAdjustment
-        color: root.hasColorOverride ? root.colorOverride : root.iconColor
-        visible: root.isMaterial
+        sourceComponent: root.isMaterial ? materialFace : root.isUnicode ? unicodeFace : root.isSvg || root.isSvgCorner ? svgFace : null
     }
 
-    StyledText {
-        anchors.centerIn: parent
-        text: root.unicodeChar
-        font.pixelSize: root.iconSize * root.unicodeIconScale
-        color: root.hasColorOverride ? root.colorOverride : root.iconColor
-        visible: root.isUnicode
+    Component {
+        id: materialFace
+
+        DIcon {
+            name: root.materialName
+            size: root.iconSize - root.materialIconSizeAdjustment
+            color: root.hasColorOverride ? root.colorOverride : root.iconColor
+        }
     }
 
-    DSVGIcon {
-        anchors.centerIn: parent
-        source: root.svgSource
-        size: root.iconSize
-        cornerIcon: root.svgCornerIcon
-        colorOverride: root.colorOverride
-        brightnessOverride: root.brightnessOverride
-        contrastOverride: root.contrastOverride
-        saturationOverride: root.saturationOverride
-        visible: root.isSvg || root.isSvgCorner
+    Component {
+        id: unicodeFace
+
+        StyledText {
+            text: root.unicodeChar
+            font.pixelSize: root.iconSize * root.unicodeIconScale
+            color: root.hasColorOverride ? root.colorOverride : root.iconColor
+        }
+    }
+
+    Component {
+        id: svgFace
+
+        DSVGIcon {
+            source: root.svgSource
+            size: root.iconSize
+            cornerIcon: root.svgCornerIcon
+            colorOverride: root.colorOverride
+            brightnessOverride: root.brightnessOverride
+            contrastOverride: root.contrastOverride
+            saturationOverride: root.saturationOverride
+        }
     }
 
     CachingImage {

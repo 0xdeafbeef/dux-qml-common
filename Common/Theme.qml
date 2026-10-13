@@ -352,7 +352,7 @@ Singleton {
     readonly property var springSpecs: ({
             "expressive": [560, 37],
             "fast": [220, 23],
-            "default": [100, 16]
+            "default": [300, 24]
         })
     readonly property var springDampingScales: [1.22, 1.0, 0.82]
     readonly property bool springMotionDisabled: currentAnimationBaseDuration <= 0

@@ -1,3 +1,5 @@
+pragma ComponentBehavior: Bound
+
 import QtQuick
 import QtQuick.Effects
 import Quickshell.Widgets
@@ -59,24 +61,27 @@ Item {
         }
     }
 
-    Rectangle {
-        visible: root.hasCornerIcon
+    Loader {
+        active: root.hasCornerIcon
         anchors.right: parent.right
         anchors.bottom: parent.bottom
         anchors.rightMargin: -2
         anchors.bottomMargin: -2
-        width: root.cornerIconSize + 4
-        height: root.cornerIconSize + 4
-        radius: width / 2
-        color: root.cornerIconBackground
-        border.width: 1
-        border.color: Style.surfaceLight
 
-        DIcon {
-            anchors.centerIn: parent
-            name: root.cornerIcon
-            size: root.cornerIconSize
-            color: root.cornerIconColor
+        sourceComponent: Rectangle {
+            width: root.cornerIconSize + 4
+            height: root.cornerIconSize + 4
+            radius: width / 2
+            color: root.cornerIconBackground
+            border.width: 1
+            border.color: Style.surfaceLight
+
+            DIcon {
+                anchors.centerIn: parent
+                name: root.cornerIcon
+                size: root.cornerIconSize
+                color: root.cornerIconColor
+            }
         }
     }
 }
