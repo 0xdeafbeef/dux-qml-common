@@ -18,6 +18,7 @@ Item {
     property real brightnessOverride: 0.0
     property real contrastOverride: 0.0
     property real saturationOverride: 0.0
+    property bool asynchronous: true
 
     readonly property int rasterSize: Style.iconRasterSize(size) * 2
     readonly property bool hasCornerIcon: cornerIcon !== ""
@@ -44,7 +45,7 @@ Item {
         source: root.resolvedSource
         smooth: true
         mipmap: true
-        asynchronous: true
+        asynchronous: root.asynchronous
         implicitSize: root.size * 2
         backer.sourceSize.width: root.rasterSize
         backer.sourceSize.height: root.rasterSize

@@ -14,7 +14,8 @@ Row {
     signal sortKeySelected(string key)
     signal directionToggled
 
-    readonly property var keys: [
+    property var keys: defaultKeys
+    readonly property var defaultKeys: [
         {
             "key": "name",
             "icon": "sort_by_alpha",

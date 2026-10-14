@@ -11,6 +11,7 @@ Item {
     property string thumbnail: ""
     property int size: Style.iconSize
     property color color: Style.surfaceText
+    property bool asynchronous: true
 
     readonly property string themeIconPath: Paths.resolveIconPath(iconName)
     readonly property real devicePixelRatio: Window.window?.devicePixelRatio ?? Screen.devicePixelRatio
@@ -21,6 +22,8 @@ Item {
 
     function glyphFor(name) {
         switch (true) {
+        case name.startsWith("user-trash"):
+            return "delete";
         case name.startsWith("folder"):
         case name.startsWith("user-"):
         case name === "inode-directory":
@@ -73,7 +76,7 @@ Item {
             sourceSize.width: root.rasterSize
             sourceSize.height: root.rasterSize
             fillMode: Image.PreserveAspectFit
-            asynchronous: true
+            asynchronous: root.asynchronous
             cache: true
             smooth: true
         }
@@ -85,6 +88,7 @@ Item {
         sourceComponent: DSVGIcon {
             source: root.themeIconPath
             size: root.size
+            asynchronous: root.asynchronous
         }
     }
 

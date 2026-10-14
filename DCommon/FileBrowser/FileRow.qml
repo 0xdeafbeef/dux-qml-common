@@ -23,6 +23,7 @@ FileItemSurface {
     required property bool untrusted
     required property bool unreadable
     required property bool hidden
+    required property var model
 
     readonly property string highlight: view?.nameHighlight ?? ""
     readonly property var entry: ({
@@ -36,7 +37,9 @@ FileItemSurface {
             "ctimeMs": ctimeMs,
             "owner": owner,
             "mode": mode,
-            "childCount": view?.childCounts?.[path] ?? -1
+            "childCount": view?.childCounts?.[path] ?? -1,
+            "originalPath": model.originalPath ?? "",
+            "deletedMs": model.deletedMs ?? 0
         })
 
     hitTargets: [visual, nameLabel, chevron].concat(Array.from(columns.children))

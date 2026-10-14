@@ -51,6 +51,21 @@ Singleton {
         }
     ]
 
+    readonly property var trashColumns: [
+        {
+            "id": "origin",
+            "sortKey": "origin",
+            "width": FileBrowserMetrics.locationColumnWidth,
+            "align": Text.AlignLeft
+        },
+        {
+            "id": "deleted",
+            "sortKey": "deleted",
+            "width": FileBrowserMetrics.modifiedColumnWidth,
+            "align": Text.AlignRight
+        }
+    ]
+
     function label(id) {
         switch (id) {
         case "name":
@@ -69,6 +84,10 @@ Singleton {
             return I18n.tr("Created", "file list column header");
         case "location":
             return I18n.tr("Location", "file list column header");
+        case "origin":
+            return I18n.tr("Original location", "trash list column header, where an item was deleted from");
+        case "deleted":
+            return I18n.tr("Deleted", "trash list column header, when an item was moved to the trash");
         default:
             return id;
         }
@@ -92,13 +111,17 @@ Singleton {
             return FileFormat.modified(entry.ctimeMs);
         case "location":
             return FileFormat.location(entry.path);
+        case "origin":
+            return FileFormat.location(entry.originalPath ?? "");
+        case "deleted":
+            return FileFormat.modified(entry.deletedMs);
         default:
             return "";
         }
     }
 
     function specFor(id) {
-        return optional.find(column => column.id === id) ?? null;
+        return optional.find(column => column.id === id) ?? trashColumns.find(column => column.id === id) ?? null;
     }
 
     function sortKeyFor(id) {
