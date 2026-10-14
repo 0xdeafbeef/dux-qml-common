@@ -191,6 +191,12 @@ ShellRoot {
             check(root.accepted.length > 1 && root.accepted.every(path => !path.endsWith("/Wallpapers")), "multiple accepts files only");
 
             browser.editPath();
+            for (const char of "/home/alice/Documents")
+                input.keyClick(char);
+            input.keyClick(Qt.Key_Return);
+            input.tryVerify(() => browser.path === "/home/alice/Documents" && !browser.editingPath, 1000, "a typed path opens without a resolver");
+
+            browser.editPath();
             input.keyClick(Qt.Key_Escape);
             check(!browser.editingPath && browser.body.activeFocus && root.rejects === 0, "Escape leaves path editing and returns focus to the list");
             input.keyClick(Qt.Key_Escape);

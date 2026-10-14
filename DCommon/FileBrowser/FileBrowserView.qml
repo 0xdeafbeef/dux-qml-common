@@ -38,7 +38,7 @@ FocusScope {
     property bool thumbnailsEnabled: true
     property real thumbnailSizeLimit: -1
     property bool networkThumbnails: true
-    property var pathSuggestions: []
+    property var folderJump: null
     property color paneColor: "transparent"
     property color chipColor: Style.chipSurface
     property real paneRadius: FileBrowserMetrics.paneRadius
@@ -52,7 +52,7 @@ FocusScope {
     readonly property alias canGoBack: history.canGoBack
     readonly property alias canGoForward: history.canGoForward
     readonly property alias canGoUp: history.canGoUp
-    readonly property alias editingPath: pathBar.editing
+    readonly property bool editingPath: pathBar.editing || pathBar.connecting
     readonly property bool renaming: viewBody.renamingPath !== ""
     property int sidebarBreakpoint: FileBrowserMetrics.sidebarBreakpoint
     readonly property bool sidebarShown: showSidebar && width >= sidebarBreakpoint
@@ -80,6 +80,8 @@ FocusScope {
     signal focusRequested
     signal tabRequested(string path)
     signal pathMenuRequested(string path, real pointX, real pointY)
+    signal locationRequested(var location)
+    signal locationCancelled
 
     function navigate(target) {
         _pendingReveal = [];
@@ -141,6 +143,20 @@ FocusScope {
 
     function editPath() {
         pathBar.startEditing();
+    }
+
+    function startJump() {
+        pathBar.startJump();
+    }
+
+    function dismissPathEditor(x, y) {
+        if (!pathBar.editing || pathBar.connecting || pathBar.contains(pathBar.mapFromItem(root, x, y)))
+            return;
+        pathBar.stopEditing();
+    }
+
+    function settleLocation(target) {
+        pathBar.settleLocation(target);
     }
 
     function focusBody() {
@@ -328,7 +344,7 @@ FocusScope {
                 path: root.path
                 homePath: root.homePath
                 chipColor: root.chipColor
-                suggestions: root.pathSuggestions
+                folderJump: root.folderJump
                 backend: root.backend
                 dropEnabled: root.dropEnabled
                 onEditingFinished: root.focusBody()
@@ -343,6 +359,12 @@ FocusScope {
                     root.focusRequested();
                     root.navigate(target);
                 }
+                onRevealRequested: targets => {
+                    root.focusRequested();
+                    root.reveal(targets);
+                }
+                onLocationRequested: location => root.locationRequested(location)
+                onLocationCancelled: root.locationCancelled()
             }
 
             Loader {
@@ -352,7 +374,7 @@ FocusScope {
                 anchors.rightMargin: root.paneMarginHorizontal
                 anchors.verticalCenter: pathBar.verticalCenter
                 active: root.pathBarTrailing !== null
-                visible: !pathBar.editing
+                visible: !root.editingPath
                 sourceComponent: root.pathBarTrailing
             }
 

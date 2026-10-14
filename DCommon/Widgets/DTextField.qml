@@ -150,8 +150,8 @@ StyledRect {
     height: implicitHeight
     radius: cornerRadius
     color: outlined || expressive ? "transparent" : Style.foregroundColor(backgroundColor, !usePopupTransparency)
-    border.color: textInput.activeFocus ? focusedBorderColor : normalBorderColor
-    border.width: outlined || expressive ? 0 : textInput.activeFocus ? focusedBorderWidth : borderWidth
+    border.color: isError ? Style.error : textInput.activeFocus ? focusedBorderColor : normalBorderColor
+    border.width: outlined || expressive ? 0 : textInput.activeFocus || isError ? focusedBorderWidth : borderWidth
 
     Component.onCompleted: {
         labelMotion.snapTo(labelFloated ? 1 : 0);

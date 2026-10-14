@@ -4,21 +4,21 @@ import QtQuick
 import QtQuick.Controls
 import qs.DCommon.Common
 import qs.DCommon.Widgets
+import "PathCompletion.js" as PathCompletion
 
-// A non-modal list under a text field: typing keeps the field's focus, the
-// arrows move the highlight, Enter or a click picks a row.
 Popup {
     id: root
 
     property Item anchorItem: null
-    property var paths: []
+    property var rows: []
+    property string errorText: ""
     property int highlightIndex: -1
-    property string homePath: FilePaths.home
+    readonly property real rowHeight: Style.menuItemHeight
 
-    signal chosen(string path)
+    signal chosen(var row)
 
     function move(delta) {
-        const count = paths.length;
+        const count = rows.length;
         if (count === 0)
             return;
         let next = highlightIndex + delta;
@@ -29,28 +29,34 @@ Popup {
         highlightIndex = next;
     }
 
-    function highlightedPath() {
-        return highlightIndex >= 0 && highlightIndex < paths.length ? paths[highlightIndex] : "";
+    function page(delta) {
+        if (rows.length === 0)
+            return;
+        highlightIndex = Math.max(0, Math.min(rows.length - 1, highlightIndex + delta * FileBrowserMetrics.suggestionRows));
     }
 
-    function labelFor(path) {
-        if (homePath !== "" && (path === homePath || path.startsWith(homePath + "/")))
-            return "~" + path.substring(homePath.length);
-        return path;
+    function highlightedRow() {
+        return highlightIndex >= 0 && highlightIndex < rows.length ? rows[highlightIndex] : null;
     }
 
     parent: anchorItem
-    x: 0
+    x: I18n.isRtl ? (anchorItem?.width ?? 0) - width : 0
     y: (anchorItem?.height ?? 0) + Style.spacingXS
-    width: Math.max(anchorItem?.width ?? 0, Style.launcherWidthMicro * 0.6)
+    width: Math.max(anchorItem?.width ?? 0, FileBrowserMetrics.suggestionMinWidth)
     padding: Style.spacingXS
     modal: false
     dim: false
     focus: false
     closePolicy: Popup.NoAutoClose
-    onPathsChanged: {
-        if (highlightIndex >= paths.length)
+    onRowsChanged: {
+        if (highlightIndex >= rows.length)
             highlightIndex = -1;
+        list.savedY = list.originY;
+        list.positionViewAtBeginning();
+    }
+    onHighlightIndexChanged: {
+        if (highlightIndex >= 0)
+            list.revealIndex(highlightIndex);
     }
 
     background: Item {
@@ -67,20 +73,112 @@ Popup {
     }
 
     contentItem: Column {
+        LayoutMirroring.enabled: I18n.isRtl
+        LayoutMirroring.childrenInherit: true
         spacing: 0
 
-        Repeater {
-            model: root.paths
+        Item {
+            width: parent.width
+            height: root.rowHeight
+            visible: root.errorText !== ""
 
-            FileMenuItem {
-                required property string modelData
+            DIcon {
+                id: errorIcon
+
+                anchors.left: parent.left
+                anchors.leftMargin: Style.spacingM
+                anchors.verticalCenter: parent.verticalCenter
+                name: "error"
+                size: Style.iconSizeMedium
+                color: Style.error
+            }
+
+            StyledText {
+                anchors.left: errorIcon.right
+                anchors.leftMargin: Style.spacingM
+                anchors.right: parent.right
+                anchors.rightMargin: Style.spacingM
+                anchors.verticalCenter: parent.verticalCenter
+                text: root.errorText
+                color: Style.error
+                font.pixelSize: Style.fontSizeMedium
+                horizontalAlignment: Text.AlignLeft
+                wrapMode: Text.NoWrap
+                elide: Text.ElideRight
+            }
+        }
+
+        DListView {
+            id: list
+
+            width: parent.width
+            height: Math.min(root.rows.length, FileBrowserMetrics.suggestionRows) * root.rowHeight
+            visible: root.rows.length > 0
+            clip: true
+            model: root.rows
+
+            delegate: StyledButton {
+                id: entry
+
+                required property var modelData
                 required property int index
 
-                text: root.labelFor(modelData)
-                iconName: "folder"
+                width: ListView.view.width
+                implicitHeight: root.rowHeight
+                radius: Style.cornerRadiusS
+                color: "transparent"
                 focusPolicy: Qt.NoFocus
-                highlighted: index === root.highlightIndex
                 onClicked: root.chosen(modelData)
+
+                StateLayer {
+                    control: entry
+                    hovered: entry.hovered
+                    focused: entry.index === root.highlightIndex
+                    stateColor: Style.surfaceText
+                }
+
+                DIcon {
+                    id: entryIcon
+
+                    anchors.left: parent.left
+                    anchors.leftMargin: Style.spacingM
+                    anchors.verticalCenter: parent.verticalCenter
+                    name: entry.modelData.kind === "visited" ? "history" : "folder"
+                    size: Style.iconSizeMedium
+                    color: Style.surfaceVariantText
+                }
+
+                StyledText {
+                    id: entryHint
+
+                    anchors.right: parent.right
+                    anchors.rightMargin: Style.spacingM
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: Math.min(implicitWidth, parent.width * FileBrowserMetrics.suggestionHintRatio)
+                    visible: entry.modelData.hint !== ""
+                    text: PathCompletion.markup(entry.modelData.hint, entry.modelData.hintMarks, Style.primary)
+                    textFormat: Text.StyledText
+                    color: Style.surfaceVariantText
+                    font.pixelSize: Style.fontSizeSmall
+                    horizontalAlignment: Text.AlignRight
+                    wrapMode: Text.NoWrap
+                    elide: Text.ElideLeft
+                }
+
+                StyledText {
+                    anchors.left: entryIcon.right
+                    anchors.leftMargin: Style.spacingM
+                    anchors.right: entryHint.visible ? entryHint.left : parent.right
+                    anchors.rightMargin: Style.spacingM
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: PathCompletion.markup(entry.modelData.name, entry.modelData.nameMarks, Style.primary)
+                    textFormat: Text.StyledText
+                    color: Style.surfaceText
+                    font.pixelSize: Style.fontSizeMedium
+                    horizontalAlignment: Text.AlignLeft
+                    wrapMode: Text.NoWrap
+                    elide: Text.ElideRight
+                }
             }
         }
     }

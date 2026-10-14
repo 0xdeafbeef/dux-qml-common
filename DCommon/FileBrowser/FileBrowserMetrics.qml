@@ -94,6 +94,9 @@ Singleton {
     readonly property int typeAheadInterval: 1000
     readonly property int activationDebounce: 400
     readonly property int suggestionRows: 8
+    readonly property int suggestionCap: 50
+    readonly property real suggestionHintRatio: 0.45
+    readonly property real suggestionMinWidth: Style.launcherWidthMicro * 0.6
     readonly property int completionLimit: 500
 
     readonly property bool animationsEnabled: !Style.reduceMotion && Style.currentAnimationBaseDuration > 0
