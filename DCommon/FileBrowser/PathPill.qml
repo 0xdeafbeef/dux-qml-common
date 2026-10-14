@@ -9,21 +9,55 @@ StyledButton {
 
     property string label: ""
     property string iconName: ""
+    property string path: ""
     property bool current: false
+    property bool dropEnabled: false
     property color chipColor: Style.chipSurface
 
-    readonly property color contentColor: current ? Style.onSelectedContainer : Style.surfaceText
+    readonly property bool dropTarget: dropZone.containsDrag
+    readonly property color contentColor: dropTarget ? Style.onPrimaryContainer : current ? Style.onSelectedContainer : Style.surfaceText
+
+    signal middleClicked
+    signal menuRequested(real pointX, real pointY)
+    signal dropped(var drop)
 
     focusPolicy: Qt.TabFocus
     implicitWidth: row.implicitWidth + FileBrowserMetrics.pathPillPadding * 2
     implicitHeight: FileBrowserMetrics.pathPillHeight
     radius: FileBrowserMetrics.pathPillRadius
-    color: current ? Style.selectedContainer : chipColor
+    color: dropTarget ? Style.primaryContainer : current ? Style.selectedContainer : chipColor
     Accessible.name: label
 
     StateLayer {
         control: pill
         stateColor: pill.contentColor
+    }
+
+    TapHandler {
+        acceptedButtons: Qt.MiddleButton
+        onTapped: pill.middleClicked()
+    }
+
+    TapHandler {
+        acceptedButtons: Qt.RightButton
+        onTapped: point => pill.menuRequested(point.position.x, point.position.y)
+    }
+
+    Keys.onPressed: event => {
+        const shifted = (event.modifiers & Qt.ShiftModifier) !== 0;
+        if (event.key !== Qt.Key_Menu && !(event.key === Qt.Key_F10 && shifted))
+            return;
+        event.accepted = true;
+        pill.menuRequested(pill.width / 2, pill.height / 2);
+    }
+
+    FileDropArea {
+        id: dropZone
+
+        anchors.fill: parent
+        dropPath: pill.path
+        enabled: pill.dropEnabled && pill.path !== ""
+        onDropped: drop => pill.dropped(drop)
     }
 
     FocusRing {
@@ -43,7 +77,7 @@ StyledButton {
             visible: pill.iconName !== ""
             name: pill.iconName
             size: FileBrowserMetrics.pathIconSize
-            color: pill.current ? pill.contentColor : Style.primary
+            color: pill.current || pill.dropTarget ? pill.contentColor : Style.primary
         }
 
         StyledText {

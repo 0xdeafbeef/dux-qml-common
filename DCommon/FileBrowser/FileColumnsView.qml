@@ -150,8 +150,9 @@ Item {
             onTapped: columns.body.openRequested(column.dirPath)
         }
 
-        DropArea {
+        FileDropArea {
             anchors.fill: parent
+            dropPath: column.dirPath
             enabled: columns.body.dropEnabled
             onDropped: drop => columns.body.itemsDropped(column.dirPath, drop)
         }
@@ -181,6 +182,11 @@ Item {
                     return;
                 }
                 columns.body.activateRequested(entry);
+            }
+            onItemMiddleClicked: index => {
+                const entry = columns.entryOf(column.model, index);
+                if (entry?.isDir)
+                    columns.body.tabRequested(entry.path);
             }
             onItemContextMenu: (index, pointX, pointY, modifiers) => {
                 const entry = columns.entryOf(column.model, index);
@@ -278,6 +284,7 @@ Item {
                     model: columns.body.directory.entries
                     onItemClicked: (index, modifiers) => columns.body.click(index, modifiers)
                     onItemActivated: index => columns.body.activate(index)
+                    onItemMiddleClicked: index => columns.body.middleClick(index)
                     onItemContextMenu: (index, pointX, pointY, modifiers) => columns.body.forwardItemMenu(activeList, index, pointX, pointY, modifiers)
                     onItemDragStarted: index => columns.body.startDrag(index)
                     onItemDropped: (index, drop) => columns.body.itemsDropped(columns.body.entryAt(index).path, drop)
@@ -289,6 +296,7 @@ Item {
                     FileViewBackground {
                         view: activeList
                         selection: columns.body.selection
+                        dropPath: columns.body.directory.path
                         onCleared: {
                             columns.body.focusRequested();
                             columns.body.selection.clear();

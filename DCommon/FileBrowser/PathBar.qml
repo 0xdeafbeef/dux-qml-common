@@ -13,6 +13,7 @@ FocusScope {
     property bool editing: false
     property var suggestions: []
     property var backend: null
+    property bool dropEnabled: false
 
     property var completions: []
     property string completionKey: ""
@@ -54,6 +55,9 @@ FocusScope {
 
     signal navigated(string target)
     signal editingFinished
+    signal tabRequested(string target)
+    signal menuRequested(string target, real pointX, real pointY)
+    signal itemsDropped(string dest, var drop)
 
     readonly property var segments: bar.segmentsFor(path, homePath)
 
@@ -259,11 +263,21 @@ FocusScope {
                     }
 
                     PathPill {
+                        id: pill
+
                         label: segment.modelData.iconName === "home" ? I18n.tr("Home", "file browser quick access location") : segment.modelData.label
                         iconName: segment.modelData.iconName
+                        path: segment.modelData.path
                         chipColor: bar.chipColor
                         current: segment.index === bar.segments.length - 1
+                        dropEnabled: bar.dropEnabled
                         onClicked: bar.navigated(segment.modelData.path)
+                        onMiddleClicked: bar.tabRequested(segment.modelData.path)
+                        onDropped: drop => bar.itemsDropped(segment.modelData.path, drop)
+                        onMenuRequested: (pointX, pointY) => {
+                            const point = pill.mapToItem(bar, pointX, pointY);
+                            bar.menuRequested(segment.modelData.path, point.x, point.y);
+                        }
                     }
                 }
             }

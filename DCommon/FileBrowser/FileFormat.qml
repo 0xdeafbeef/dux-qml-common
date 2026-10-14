@@ -104,6 +104,16 @@ Singleton {
         return escapeMarkup(text.substring(0, at)) + `<font color="${color}"><b>` + escapeMarkup(text.substring(at, end)) + "</b></font>" + escapeMarkup(text.substring(end));
     }
 
+    function stemLength(name, isDir) {
+        if (isDir)
+            return name.length;
+        const compound = name.search(/\.tar\.[^.]+$/i);
+        if (compound > 0)
+            return compound;
+        const dot = name.lastIndexOf(".");
+        return dot > 0 ? dot : name.length;
+    }
+
     function validName(name) {
         const trimmed = name.trim();
         return trimmed !== "" && trimmed !== "." && trimmed !== ".." && !trimmed.includes("/");

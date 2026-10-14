@@ -22,6 +22,7 @@ StyledButton {
 
     signal actionTriggered
     signal dropped(var drop)
+    signal middleClicked
 
     readonly property bool showAction: actionIcon !== "" && (hovered || actionArea.containsMouse)
     readonly property color contentColor: {
@@ -38,12 +39,18 @@ StyledButton {
     Accessible.name: label
     Accessible.description: tooltipText
 
-    DropArea {
+    FileDropArea {
         id: dropZone
 
         anchors.fill: parent
+        dropPath: row.dropPath
         enabled: row.dropPath !== ""
         onDropped: drop => row.dropped(drop)
+    }
+
+    TapHandler {
+        acceptedButtons: Qt.MiddleButton
+        onTapped: row.middleClicked()
     }
 
     StateLayer {

@@ -65,6 +65,7 @@ FocusScope {
     signal dragRequested(var paths)
     signal renameRequested(string path, string name)
     signal openRequested(string path)
+    signal tabRequested(string path)
     signal revealRequested(string path)
     signal focusRequested
     signal sortRequested(string key)
@@ -191,6 +192,12 @@ FocusScope {
         _lastActivation = now;
         selection.select(entry.path);
         activateRequested(entry);
+    }
+
+    function middleClick(index) {
+        const entry = entryAt(index);
+        if (entry?.isDir)
+            tabRequested(entry.path);
     }
 
     function click(index, modifiers) {
@@ -420,6 +427,7 @@ FocusScope {
 
     component ViewBackground: FileViewBackground {
         selection: body.selection
+        dropPath: body.directory.path
         onCleared: {
             body.focusRequested();
             body.selection.clear();
@@ -453,6 +461,7 @@ FocusScope {
             header: body.columnsScroll ? scrollingHeader : body.header
             onItemClicked: (index, modifiers) => body.click(index, modifiers)
             onItemActivated: index => body.activate(index)
+            onItemMiddleClicked: index => body.middleClick(index)
             onItemContextMenu: (index, pointX, pointY, modifiers) => body.forwardItemMenu(listView, index, pointX, pointY, modifiers)
             onItemDragStarted: index => body.startDrag(index)
             onItemDropped: (index, drop) => body.itemsDropped(body.entryAt(index).path, drop)
@@ -495,6 +504,7 @@ FocusScope {
             header: body.header
             onItemClicked: (index, modifiers) => body.click(index, modifiers)
             onItemActivated: index => body.activate(index)
+            onItemMiddleClicked: index => body.middleClick(index)
             onItemContextMenu: (index, pointX, pointY, modifiers) => body.forwardItemMenu(gridView, index, pointX, pointY, modifiers)
             onItemDragStarted: index => body.startDrag(index)
             onItemDropped: (index, drop) => body.itemsDropped(body.entryAt(index).path, drop)

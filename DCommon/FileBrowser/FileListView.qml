@@ -28,6 +28,7 @@ DListView {
 
     signal itemClicked(int index, int modifiers)
     signal itemActivated(int index)
+    signal itemMiddleClicked(int index)
     signal itemContextMenu(int index, real pointX, real pointY, int modifiers)
     signal itemDragStarted(int index)
     signal itemDropped(int index, var drop)

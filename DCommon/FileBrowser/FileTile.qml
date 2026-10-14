@@ -92,6 +92,7 @@ FileItemSurface {
             sourceComponent: InlineRename {
                 width: parent.width
                 name: tile.name
+                isDir: tile.isDir
                 onCommitted: name => tile.view.renameSubmitted(tile.path, name)
                 onCancelled: tile.view.renameCancelled()
                 Component.onCompleted: begin()

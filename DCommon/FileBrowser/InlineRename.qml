@@ -8,6 +8,7 @@ DTextField {
     id: field
 
     required property string name
+    property bool isDir: false
 
     readonly property string trimmed: text.trim()
     readonly property bool valid: FileFormat.validName(text)
@@ -18,7 +19,7 @@ DTextField {
     function begin() {
         text = name;
         forceActiveFocus();
-        selectAll();
+        select(0, FileFormat.stemLength(name, isDir));
     }
 
     function commit() {

@@ -8,6 +8,7 @@ Item {
 
     required property Item view
     required property SelectionModel selection
+    property string dropPath: ""
 
     readonly property real scrollMargin: Math.min(Style.spacingXL, view.height / 2)
     readonly property real scrollDirection: {
@@ -153,8 +154,9 @@ Item {
         }
     }
 
-    DropArea {
+    FileDropArea {
         anchors.fill: parent
+        dropPath: background.dropPath
         enabled: background.view.dropEnabled === true
         onDropped: drop => background.dropped(drop)
     }

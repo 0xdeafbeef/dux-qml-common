@@ -100,6 +100,12 @@ StyledButton {
         }
     }
 
+    TapHandler {
+        acceptedButtons: Qt.MiddleButton
+        enabled: !surface.renaming
+        onTapped: surface.view.itemMiddleClicked(surface.index)
+    }
+
     DragHandler {
         target: null
         enabled: !surface.renaming && surface.view?.dragEnabled === true
@@ -110,10 +116,11 @@ StyledButton {
         }
     }
 
-    DropArea {
+    FileDropArea {
         id: dropZone
 
         anchors.fill: parent
+        dropPath: surface.path
         enabled: surface.isDir && !surface.renaming && surface.view?.dropEnabled === true
         onDropped: drop => surface.view.itemDropped(surface.index, drop)
     }

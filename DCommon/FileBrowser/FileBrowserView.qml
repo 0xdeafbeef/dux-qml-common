@@ -28,6 +28,7 @@ FocusScope {
     property bool escapeClearsSelection: true
     property string emptyText: I18n.tr("This folder is empty", "empty directory placeholder")
     property Component header: null
+    property Component pathBarTrailing: null
     property var cutSet: ({})
     property string nameFilter: ""
     property bool singleClickActivates: false
@@ -64,6 +65,7 @@ FocusScope {
 
     property var _pendingReveal: []
     property bool _revealStarted: false
+    property string _pendingRename: ""
 
     signal activateRequested(var entry)
     signal itemMenuRequested(int index, real pointX, real pointY, int modifiers)
@@ -76,32 +78,48 @@ FocusScope {
     signal zoomRequested(string viewMode, int level)
     signal columnResizeRequested(string id, real width)
     signal focusRequested
+    signal tabRequested(string path)
+    signal pathMenuRequested(string path, real pointX, real pointY)
 
     function navigate(target) {
         _pendingReveal = [];
+        _pendingRename = "";
         _stamp();
         history.go(target);
     }
 
     function back() {
         _pendingReveal = [];
+        _pendingRename = "";
         _stamp();
         history.back();
     }
 
     function forward() {
         _pendingReveal = [];
+        _pendingRename = "";
         _stamp();
         history.forward();
     }
 
     function up() {
         _pendingReveal = [];
+        _pendingRename = "";
         _stamp();
         history.up();
     }
 
     function reveal(targets) {
+        _pendingRename = "";
+        _reveal(targets);
+    }
+
+    function revealAndRename(target) {
+        _pendingRename = target;
+        _reveal([target]);
+    }
+
+    function _reveal(targets) {
         const paths = [].concat(targets);
         const parent = FilePaths.parentOf(paths[0] ?? "");
         if (parent === "")
@@ -140,6 +158,7 @@ FocusScope {
 
     function restoreState(state) {
         _pendingReveal = [];
+        _pendingRename = "";
         history.restore(state);
     }
 
@@ -160,6 +179,10 @@ FocusScope {
         const found = viewBody.reveal(_pendingReveal, _revealStarted);
         _revealStarted = _revealStarted || found.length > 0;
         _pendingReveal = _pendingReveal.filter(path => !found.includes(path));
+        if (found.includes(_pendingRename)) {
+            viewBody.beginRename(_pendingRename);
+            _pendingRename = "";
+        }
         if (_pendingReveal.length > 0)
             directory.loadMore();
     }
@@ -294,22 +317,43 @@ FocusScope {
             PathBar {
                 id: pathBar
 
+                readonly property bool trailingShown: pathBarTrailingLoader.visible && pathBarTrailingLoader.width > 0
+
                 anchors.top: parent.top
                 anchors.left: parent.left
-                anchors.right: parent.right
+                anchors.right: trailingShown ? pathBarTrailingLoader.left : parent.right
                 anchors.topMargin: root.paneMargin
                 anchors.leftMargin: root.paneMarginHorizontal
-                anchors.rightMargin: root.paneMarginHorizontal
+                anchors.rightMargin: trailingShown ? FileBrowserMetrics.contentSpacing : root.paneMarginHorizontal
                 path: root.path
                 homePath: root.homePath
                 chipColor: root.chipColor
                 suggestions: root.pathSuggestions
                 backend: root.backend
+                dropEnabled: root.dropEnabled
                 onEditingFinished: root.focusBody()
+                onTabRequested: target => root.tabRequested(target)
+                onItemsDropped: (dest, drop) => root.itemsDropped(dest, drop)
+                onMenuRequested: (target, pointX, pointY) => {
+                    root.focusRequested();
+                    const point = pathBar.mapToItem(root, pointX, pointY);
+                    root.pathMenuRequested(target, point.x, point.y);
+                }
                 onNavigated: target => {
                     root.focusRequested();
                     root.navigate(target);
                 }
+            }
+
+            Loader {
+                id: pathBarTrailingLoader
+
+                anchors.right: parent.right
+                anchors.rightMargin: root.paneMarginHorizontal
+                anchors.verticalCenter: pathBar.verticalCenter
+                active: root.pathBarTrailing !== null
+                visible: !pathBar.editing
+                sourceComponent: root.pathBarTrailing
             }
 
             FileViewBody {
@@ -371,8 +415,10 @@ FocusScope {
                 onColumnResizeRequested: (id, width) => root.columnResizeRequested(id, width)
                 onFocusRequested: {
                     root._pendingReveal = [];
+                    root._pendingRename = "";
                     root.focusRequested();
                 }
+                onTabRequested: target => root.tabRequested(target)
                 onRevealRequested: target => {
                     root.focusRequested();
                     root.reveal(target);

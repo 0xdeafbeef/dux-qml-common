@@ -24,6 +24,7 @@ QtObject {
     property string error: ""
     property string errorCode: ""
     property int total: 0
+    property int hiddenCount: 0
     property string watchId: ""
     property bool watching: false
     property bool pollOnFocus: false
@@ -79,6 +80,7 @@ QtObject {
             _all = [];
             entries.clear();
             total = 0;
+            hiddenCount = 0;
             return;
         }
         if (!available) {
@@ -123,6 +125,7 @@ QtObject {
             }
             cursor = result.cursor || "";
             total = result.total || 0;
+            hiddenCount = result.hidden || 0;
             const more = result.entries || [];
             _all = _all.concat(more);
             entries.append(more.filter(entry => _passes(entry)));
@@ -258,6 +261,7 @@ QtObject {
         _all = [];
         entries.clear();
         total = 0;
+        hiddenCount = 0;
     }
 
     function _accept(result) {
@@ -327,6 +331,7 @@ QtObject {
         entries.clear();
         entries.append(_all.filter(entry => _passes(entry)));
         total = result.total || 0;
+        hiddenCount = result.hidden || 0;
         cursor = result.cursor || "";
         if (_firstVisible >= 0)
             _thumbnailRetry.restart();
@@ -382,6 +387,8 @@ QtObject {
     }
 
     function _applyBatch(data) {
+        if (data.hidden !== undefined)
+            hiddenCount = data.hidden;
         for (const name of data.removed || []) {
             total = Math.max(0, total - 1);
             const raw = _rawIndexOfName(name);

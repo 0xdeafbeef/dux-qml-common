@@ -135,6 +135,7 @@ FileItemSurface {
         active: row.renaming
         sourceComponent: InlineRename {
             name: row.name
+            isDir: row.isDir
             onCommitted: name => row.view.renameSubmitted(row.path, name)
             onCancelled: row.view.renameCancelled()
             Component.onCompleted: begin()

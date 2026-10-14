@@ -108,6 +108,9 @@ StyledRect {
     function selectAll() {
         textInput.selectAll();
     }
+    function select(start, end) {
+        textInput.select(start, end);
+    }
     function clear() {
         textInput.clear();
     }
