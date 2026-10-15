@@ -37,7 +37,7 @@ Item {
             "wght": weight,
             "ROND": 20,
             "opsz": 18
-        } : {},
+        } : {}
     })
     // reading the font registers the dependency, the method calls alone bind nothing
     readonly property real cellWidth: {
@@ -50,7 +50,7 @@ Item {
     }
 
     function cellX(index, ink) {
-        return index * (cellWidth + tracking) + (cellWidth - ink.width) / 2;
+        return index * (cellWidth + tracking) + (cellWidth - ink.width) / 2 - ink.x;
     }
 
     FontMetrics {
