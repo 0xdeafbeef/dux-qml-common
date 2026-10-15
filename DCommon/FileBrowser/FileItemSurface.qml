@@ -122,7 +122,9 @@ StyledButton {
         anchors.fill: parent
         dropPath: surface.path
         enabled: surface.isDir && !surface.renaming && surface.view?.dropEnabled === true
+        springLoad: surface.isDir && !surface.selected
         onDropped: drop => surface.view.itemDropped(surface.index, drop)
+        onSpringLoaded: surface.view.itemSpringLoaded(surface.index)
     }
 
     Item {

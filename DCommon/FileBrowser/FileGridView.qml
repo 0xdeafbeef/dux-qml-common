@@ -19,6 +19,7 @@ DGridView {
 
     readonly property real minimumCellWidth: iconSize + FileBrowserMetrics.gridTilePadding * 2 + FileBrowserMetrics.gridGap
     readonly property int columnsPerRow: Math.max(1, Math.floor(width / minimumCellWidth))
+    readonly property real labelLineHeight: Math.ceil(labelMetrics.lineSpacing)
     readonly property real contentOrigin: headerItem ? headerItem.y + headerItem.height : originY
 
     signal itemClicked(int index, int modifiers)
@@ -27,6 +28,7 @@ DGridView {
     signal itemContextMenu(int index, real pointX, real pointY, int modifiers)
     signal itemDragStarted(int index)
     signal itemDropped(int index, var drop)
+    signal itemSpringLoaded(int index)
     signal renameSubmitted(string path, string name)
     signal renameCancelled
 
@@ -67,10 +69,18 @@ DGridView {
     keyNavigationEnabled: false
     activeFocusOnTab: false
     cellWidth: Math.floor(width / columnsPerRow)
-    cellHeight: iconSize + Style.fontSizeSmall * 3 + FileBrowserMetrics.gridTileVerticalPadding * 2 + FileBrowserMetrics.gridNameSpacing * 2
+    cellHeight: iconSize + labelLineHeight * 3 + FileBrowserMetrics.gridTileVerticalPadding * 2 + FileBrowserMetrics.gridNameSpacing * 2
     cacheBuffer: Math.max(0, height)
     currentIndex: -1
     reuseItems: true
+
+    FontMetrics {
+        id: labelMetrics
+
+        font.family: Style.fontFor("ui")
+        font.weight: Style.fontWeightFor("ui")
+        font.pixelSize: Style.fontSizeSmall
+    }
 
     delegate: FileTile {
         view: grid

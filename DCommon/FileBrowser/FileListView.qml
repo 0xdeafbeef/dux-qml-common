@@ -32,6 +32,7 @@ DListView {
     signal itemContextMenu(int index, real pointX, real pointY, int modifiers)
     signal itemDragStarted(int index)
     signal itemDropped(int index, var drop)
+    signal itemSpringLoaded(int index)
     signal renameSubmitted(string path, string name)
     signal renameCancelled
 

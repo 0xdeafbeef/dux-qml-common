@@ -19,9 +19,11 @@ StyledButton {
     property bool selected: false
 
     property string dropPath: ""
+    property bool springLoad: true
 
     signal actionTriggered
     signal dropped(var drop)
+    signal springLoaded
     signal middleClicked
 
     readonly property bool showAction: actionIcon !== "" && (hovered || actionArea.containsMouse)
@@ -45,7 +47,9 @@ StyledButton {
         anchors.fill: parent
         dropPath: row.dropPath
         enabled: row.dropPath !== ""
+        springLoad: row.springLoad && !row.selected
         onDropped: drop => row.dropped(drop)
+        onSpringLoaded: row.springLoaded()
     }
 
     TapHandler {

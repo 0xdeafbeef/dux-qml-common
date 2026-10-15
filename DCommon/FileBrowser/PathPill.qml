@@ -20,6 +20,7 @@ StyledButton {
     signal middleClicked
     signal menuRequested(real pointX, real pointY)
     signal dropped(var drop)
+    signal springLoaded
 
     focusPolicy: Qt.TabFocus
     implicitWidth: row.implicitWidth + FileBrowserMetrics.pathPillPadding * 2
@@ -57,7 +58,9 @@ StyledButton {
         anchors.fill: parent
         dropPath: pill.path
         enabled: pill.dropEnabled && pill.path !== ""
+        springLoad: !pill.current
         onDropped: drop => pill.dropped(drop)
+        onSpringLoaded: pill.springLoaded()
     }
 
     FocusRing {

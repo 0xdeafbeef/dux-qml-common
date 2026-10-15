@@ -111,6 +111,9 @@ Singleton {
     readonly property int settleInterval: 150
     readonly property int skeletonDelay: 150
     readonly property int typeAheadInterval: 1000
+    readonly property int springLoadDelay: 700
+    readonly property real dragScrollRowsPerSecond: 12
+    readonly property real dragScrollEdge: Style.listItemHeight
     readonly property int activationDebounce: 400
     readonly property int suggestionRows: 8
     readonly property int suggestionCap: 50

@@ -32,9 +32,11 @@ FocusScope {
     property var childCounts: ({})
     property bool singleClickActivates: false
     property bool typeAheadEnabled: true
+    property string typeAheadMode: "jump"
     property bool countFolders: true
     property string homePath: ""
     property string nameHighlight: ""
+    property bool filtering: false
     property bool previewOpen: true
     property bool previewKeys: false
     property var directoryPool: null
@@ -61,6 +63,19 @@ FocusScope {
     }
     readonly property bool listing: directory.loading && directory.count === 0
     readonly property bool empty: !directory.loading && directory.error === "" && directory.count === 0
+    readonly property var dragScrollTarget: dragScrollTargetFor(FileDragHover.area)
+    readonly property real dragScrollDirection: {
+        const target = dragScrollTarget;
+        if (!target)
+            return 0;
+        const y = target.mapFromItem(null, FileDragHover.point.x, FileDragHover.point.y).y;
+        const margin = Math.min(FileBrowserMetrics.dragScrollEdge, target.height / 2);
+        if (y < margin)
+            return target.contentY > target.originY ? -Math.min(1, (margin - y) / margin) : 0;
+        if (y > target.height - margin)
+            return target.contentY < target.originY + target.contentHeight - target.height ? Math.min(1, (y - target.height + margin) / margin) : 0;
+        return 0;
+    }
 
     signal activateRequested(var entry)
     signal itemMenuRequested(int index, real pointX, real pointY, int modifiers)
@@ -78,6 +93,8 @@ FocusScope {
     signal columnResizeRequested(string id, real width)
     signal previewKeyRequested(string action, int step)
     signal directoryReplaced
+    signal filterRequested(string text)
+    signal filterFocusRequested
 
     function focusBody() {
         forceActiveFocus();
@@ -298,16 +315,55 @@ FocusScope {
         return Math.max(1, Math.floor(view.height / view.rowPitch));
     }
 
+    function typeAheadTarget(count, nameAt, current, prefix, text) {
+        const repeated = prefix !== "" && Array.from(prefix).every(letter => letter === text);
+        const needle = repeated ? text : prefix + text;
+        const start = repeated && current >= 0 ? current + 1 : 0;
+        for (let step = 0; step < count; step++) {
+            const index = (start + step) % count;
+            if (nameAt(index).toLowerCase().startsWith(needle))
+                return index;
+        }
+        return -1;
+    }
+
     function typeAhead(text) {
-        const prefix = (typeAheadTimer.prefix + text).toLowerCase();
-        typeAheadTimer.prefix = prefix;
-        typeAheadTimer.restart();
-        for (let i = 0; i < directory.count; i++) {
-            if (!directory.entries.get(i).name.toLowerCase().startsWith(prefix))
-                continue;
-            jumpTo(i, Qt.NoModifier);
+        if (typeAheadMode === "filter") {
+            typeAheadTimer.prefix = "";
+            filterRequested(text);
             return;
         }
+        const letter = text.toLowerCase();
+        const target = typeAheadTarget(directory.count, index => directory.entries.get(index).name, cursorIndex(), typeAheadTimer.prefix, letter);
+        typeAheadTimer.prefix += letter;
+        typeAheadTimer.restart();
+        if (target >= 0)
+            jumpTo(target, Qt.NoModifier);
+    }
+
+    function springLoad(index) {
+        const entry = entryAt(index);
+        if (entry?.isDir)
+            openRequested(entry.path);
+    }
+
+    function dragScrollTargetFor(area) {
+        if (area?.scrollView)
+            return ownsItem(area.scrollView) ? area.scrollView : null;
+        for (let item = area; item; item = item.parent) {
+            if (typeof item.indicesIn !== "function")
+                continue;
+            return ownsItem(item) ? item : null;
+        }
+        return null;
+    }
+
+    function ownsItem(item) {
+        for (let current = item; current; current = current.parent) {
+            if (current === body)
+                return true;
+        }
+        return false;
     }
 
     function requestCounts(first, last) {
@@ -441,6 +497,19 @@ FocusScope {
         onTriggered: body.settleNow()
     }
 
+    FrameAnimation {
+        running: body.dragScrollTarget !== null && body.dragScrollDirection !== 0
+        onTriggered: {
+            const target = body.dragScrollTarget;
+            const maximum = target.originY + Math.max(0, target.contentHeight - target.height);
+            const next = Math.max(target.originY, Math.min(maximum, target.contentY + body.dragScrollDirection * FileBrowserMetrics.listRowHeight * FileBrowserMetrics.dragScrollRowsPerSecond * frameTime));
+            if (next === target.contentY)
+                return;
+            target.contentY = next;
+            FileDragHover.scrolled = true;
+        }
+    }
+
     Keys.onPressed: event => handleKey(event)
 
     function previewKey(event) {
@@ -496,6 +565,10 @@ FocusScope {
             moveCursor(columns, modifiers);
             break;
         case Qt.Key_Up:
+            if (typeAheadMode === "filter" && filtering && modifiers === Qt.NoModifier && cursorIndex() < columns) {
+                filterFocusRequested();
+                break;
+            }
             moveCursor(-columns, modifiers);
             break;
         case Qt.Key_Right:
@@ -600,6 +673,7 @@ FocusScope {
             onItemContextMenu: (index, pointX, pointY, modifiers) => body.forwardItemMenu(listView, index, pointX, pointY, modifiers)
             onItemDragStarted: index => body.startDrag(index)
             onItemDropped: (index, drop) => body.itemsDropped(body.entryAt(index).path, drop)
+            onItemSpringLoaded: index => body.springLoad(index)
             onRenameSubmitted: (target, name) => body.finishRename(target, name)
             onRenameCancelled: body.finishRename("", "")
             onContentYChanged: settle.restart()
@@ -642,6 +716,7 @@ FocusScope {
             onItemContextMenu: (index, pointX, pointY, modifiers) => body.forwardItemMenu(gridView, index, pointX, pointY, modifiers)
             onItemDragStarted: index => body.startDrag(index)
             onItemDropped: (index, drop) => body.itemsDropped(body.entryAt(index).path, drop)
+            onItemSpringLoaded: index => body.springLoad(index)
             onRenameSubmitted: (target, name) => body.finishRename(target, name)
             onRenameCancelled: body.finishRename("", "")
             onContentYChanged: settle.restart()

@@ -419,6 +419,7 @@ Item {
                 anchors.fill: parent
                 dropPath: column.dirPath
                 enabled: !column.active && !column.leaving && columns.body.dropEnabled
+                scrollView: list
                 onDropped: drop => columns.body.itemsDropped(column.dirPath, drop)
             }
 
@@ -483,6 +484,11 @@ Item {
                         columns.body.startDrag(index);
                 }
                 onItemDropped: (index, drop) => columns.body.itemsDropped(column.entryAt(index).path, drop)
+                onItemSpringLoaded: index => {
+                    const entry = column.entryAt(index);
+                    if (entry?.isDir)
+                        columns.body.openRequested(entry.path);
+                }
                 onRenameSubmitted: (target, name) => columns.body.finishRename(target, name)
                 onRenameCancelled: columns.body.finishRename("", "")
                 onContentYChanged: settle.restart()

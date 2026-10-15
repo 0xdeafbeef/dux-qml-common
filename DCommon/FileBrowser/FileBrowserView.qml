@@ -2,6 +2,7 @@ pragma ComponentBehavior: Bound
 
 import QtQuick
 import qs.DCommon.Common
+import "NameFilter.js" as NameFilter
 
 FocusScope {
     id: root
@@ -37,6 +38,7 @@ FocusScope {
     property string nameFilter: ""
     property bool singleClickActivates: false
     property bool typeAheadEnabled: true
+    property string typeAheadMode: "jump"
     property bool countFolders: true
     property bool dirsFirst: true
     property bool thumbnailsEnabled: true
@@ -89,6 +91,8 @@ FocusScope {
     signal pathMenuRequested(string path, real pointX, real pointY)
     signal locationRequested(var location)
     signal locationCancelled
+    signal filterRequested(string text)
+    signal filterFocusRequested
 
     function navigate(target) {
         _pendingReveal = [];
@@ -362,6 +366,14 @@ FocusScope {
             border.width: root.paneBorderWidth
             border.color: root.paneBorderColor
 
+            FileDropArea {
+                anchors.fill: parent
+                enabled: root.dropEnabled && root.directory.path !== ""
+                dropPath: root.directory.path
+                scrollView: viewBody.view?.activeList ?? viewBody.view
+                onDropped: drop => root.itemsDropped(root.directory.path, drop)
+            }
+
             PathBar {
                 id: pathBar
 
@@ -447,9 +459,13 @@ FocusScope {
                 cutSet: root.cutSet
                 singleClickActivates: root.singleClickActivates
                 typeAheadEnabled: root.typeAheadEnabled
+                typeAheadMode: root.typeAheadMode
                 countFolders: root.countFolders
                 homePath: root.homePath
-                nameHighlight: root.nameFilter
+                nameHighlight: NameFilter.needle(root.nameFilter)
+                filtering: root.nameFilter !== ""
+                onFilterRequested: text => root.filterRequested(text)
+                onFilterFocusRequested: root.filterFocusRequested()
                 onActivateRequested: entry => root.activateRequested(entry)
                 onItemMenuRequested: (index, pointX, pointY, modifiers) => {
                     root.focusRequested();

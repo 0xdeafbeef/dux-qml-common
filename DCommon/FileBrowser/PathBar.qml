@@ -422,6 +422,7 @@ FocusScope {
                         onClicked: bar.pillClicked(segment.modelData.path)
                         onMiddleClicked: bar.tabRequested(segment.modelData.path)
                         onDropped: drop => bar.itemsDropped(segment.modelData.path, drop)
+                        onSpringLoaded: bar.navigated(segment.modelData.path)
                         onMenuRequested: (pointX, pointY) => {
                             const point = pill.mapToItem(bar, pointX, pointY);
                             bar.menuRequested(segment.modelData.path, point.x, point.y);

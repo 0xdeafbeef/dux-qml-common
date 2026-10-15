@@ -2,6 +2,7 @@ pragma ComponentBehavior: Bound
 
 import QtQuick
 import qs.DCommon.Common
+import "NameFilter.js" as NameFilter
 
 QtObject {
     id: root
@@ -45,6 +46,8 @@ QtObject {
     property var _watchToken: null
     property var _pageToken: null
     property var _thumbnailsInFlight: ({})
+    property string _matcherQuery: ""
+    property var _matcher: null
 
     signal gone
     signal listed
@@ -142,9 +145,11 @@ QtObject {
     function _passes(entry) {
         if (nameFilter === "")
             return true;
-        const needle = nameFilter.toLowerCase();
-        const display = entry.displayName ?? "";
-        return entry.name.toLowerCase().includes(needle) || (display !== "" && display.toLowerCase().includes(needle));
+        if (_matcher === null || _matcherQuery !== nameFilter) {
+            _matcherQuery = nameFilter;
+            _matcher = NameFilter.compile(nameFilter);
+        }
+        return NameFilter.entryMatches(_matcher, entry);
     }
 
     function _refilter() {
