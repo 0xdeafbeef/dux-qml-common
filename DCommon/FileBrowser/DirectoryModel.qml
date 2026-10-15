@@ -44,6 +44,7 @@ QtObject {
     property var _buffered: []
     property var _watchToken: null
     property var _pageToken: null
+    property var _thumbnailsInFlight: ({})
 
     signal gone
     signal listed
@@ -66,7 +67,10 @@ QtObject {
     onPathChanged: reload()
     onBackendChanged: reload()
     onNameFilterChanged: _refilter()
-    Component.onCompleted: reload()
+    Component.onCompleted: {
+        if (_loadedPath !== path)
+            reload();
+    }
     Component.onDestruction: _release()
 
     function reload() {
@@ -206,7 +210,7 @@ QtObject {
         const paths = [];
         for (let i = first; i <= Math.min(last, entries.count - 1); i++) {
             const entry = entries.get(i);
-            if (!entry.thumbnailable || entry.thumbnail !== "")
+            if (!entry.thumbnailable || entry.thumbnail !== "" || _thumbnailsInFlight[entry.path] === true)
                 continue;
             if (thumbnailSizeLimit >= 0 && entry.size > thumbnailSizeLimit && entry.mime.startsWith("image/"))
                 continue;
@@ -215,7 +219,11 @@ QtObject {
         if (paths.length === 0)
             return;
 
+        for (const path of paths)
+            _thumbnailsInFlight[path] = true;
         backend.thumbnails(paths, thumbnailSize, watchId, result => {
+            for (const path of paths)
+                delete _thumbnailsInFlight[path];
             if (result.error)
                 return;
             const at = _positions();
@@ -483,6 +491,7 @@ QtObject {
         _buffered = [];
         if (watchId !== "" && backend)
             backend.unwatch(watchId);
+        _thumbnailsInFlight = ({});
         watchId = "";
         watching = false;
         pollOnFocus = false;

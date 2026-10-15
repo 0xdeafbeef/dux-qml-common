@@ -25,6 +25,7 @@ FocusScope {
     property bool escapeClearsSelection: true
     property string emptyText: I18n.tr("This folder is empty", "empty directory placeholder")
     property color surfaceColor: "transparent"
+    property color chipColor: Style.chipSurface
     property Component header: null
     property string renamingPath: ""
     property var cutSet: ({})
@@ -34,10 +35,14 @@ FocusScope {
     property bool countFolders: true
     property string homePath: ""
     property string nameHighlight: ""
+    property bool previewOpen: true
+    property bool previewKeys: false
+    property var directoryPool: null
+    property bool slowListing: false
     property real _lastActivation: 0
 
     readonly property var view: viewLoader.item
-    readonly property bool columnsMode: viewMode === "columns"
+    readonly property bool columnsMode: viewMode === "columns" && directoryPool !== null
     readonly property bool columnsScroll: header !== null && viewMode === "list"
     readonly property int zoom: viewMode === "grid" ? gridZoom : listZoom
     readonly property var iconSizes: FileBrowserMetrics.iconSizesFor(viewMode)
@@ -71,6 +76,8 @@ FocusScope {
     signal sortRequested(string key)
     signal zoomRequested(string viewMode, int level)
     signal columnResizeRequested(string id, real width)
+    signal previewKeyRequested(string action, int step)
+    signal directoryReplaced
 
     function focusBody() {
         forceActiveFocus();
@@ -88,8 +95,39 @@ FocusScope {
         return entryAt(cursorIndex());
     }
 
+    function previewEntry() {
+        if (selection.count === 0)
+            return null;
+        const target = selection.contains(selection.cursorPath) ? selection.cursorPath : selection.paths[0];
+        return entryAt(directory.indexOfPath(target));
+    }
+
+    function selectionInViewOrder() {
+        const found = [];
+        if (selection.count === 0)
+            return found;
+        for (let i = 0; i < directory.count; i++) {
+            const entry = directory.entries.get(i);
+            if (selection.contains(entry.path))
+                found.push(entry);
+        }
+        return found;
+    }
+
     function selectedEntries() {
-        return selection.paths.map(selected => entryAt(directory.indexOfPath(selected))).filter(entry => entry !== null);
+        if (selection.count === 0)
+            return [];
+        if (selection.count === 1) {
+            const entry = entryAt(directory.indexOfPath(selection.paths[0]));
+            return entry ? [entry] : [];
+        }
+        const found = new Map();
+        for (let i = 0; i < directory.count; i++) {
+            const entry = directory.entries.get(i);
+            if (selection.contains(entry.path))
+                found.set(entry.path, entry);
+        }
+        return selection.paths.map(selected => found.get(selected)).filter(entry => entry !== undefined);
     }
 
     function beginRename(target) {
@@ -112,6 +150,8 @@ FocusScope {
         const target = view?.activeList ?? view;
         if (!target)
             return;
+        if (typeof target.forceLayout === "function")
+            target.forceLayout();
         target.contentY = target.originY + Math.max(0, Math.min(offset, target.contentHeight - target.height));
     }
 
@@ -175,7 +215,11 @@ FocusScope {
             return [];
         if (!extend) {
             selection.select(present[0]);
-            view?.positionViewAtIndex(directory.indexOfPath(present[0]), ListView.Center);
+            const index = directory.indexOfPath(present[0]);
+            if (columnsMode)
+                view?.revealIndex(index);
+            else
+                view?.positionViewAtIndex(index, ListView.Center);
         }
         for (const path of present)
             selection.add(path);
@@ -309,7 +353,47 @@ FocusScope {
         dragRequested(selection.paths.slice());
     }
 
+    function settleNow() {
+        settle.stop();
+        if (!view || columnsMode)
+            return;
+        const range = view.visibleRange();
+        directory.requestThumbnails(range[0], range[1]);
+        requestCounts(range[0], range[1]);
+        if (range[1] >= directory.count - 1)
+            directory.loadMore();
+    }
+
     onViewModeChanged: renamingPath = ""
+    function resetScroll() {
+        const target = view?.activeList ?? view;
+        if (!target || columnsMode)
+            return;
+        if (target.savedY !== undefined)
+            target.savedY = target.originY;
+        target.positionViewAtBeginning();
+    }
+
+    onDirectoryChanged: {
+        selection.clear();
+        renamingPath = "";
+        childCounts = ({});
+        if (!columnsMode)
+            scrollReset.restart();
+        directoryReplaced();
+    }
+    onListingChanged: {
+        if (listing) {
+            skeletonDelay.restart();
+            return;
+        }
+        skeletonDelay.stop();
+        slowListing = false;
+    }
+    Component.onCompleted: {
+        if (listing)
+            skeletonDelay.start();
+    }
 
     Connections {
         target: body.directory
@@ -323,8 +407,22 @@ FocusScope {
 
         function onListed() {
             body.selection.prune(body.directory.entries);
-            settle.restart();
+            body.settleNow();
         }
+    }
+
+    Timer {
+        id: scrollReset
+
+        interval: 0
+        onTriggered: body.resetScroll()
+    }
+
+    Timer {
+        id: skeletonDelay
+
+        interval: FileBrowserMetrics.skeletonDelay
+        onTriggered: body.slowListing = body.listing
     }
 
     Timer {
@@ -340,22 +438,57 @@ FocusScope {
         id: settle
 
         interval: FileBrowserMetrics.settleInterval
-        onTriggered: {
-            if (!body.view)
-                return;
-            const range = body.view.visibleRange();
-            body.directory.requestThumbnails(range[0], range[1]);
-            body.requestCounts(range[0], range[1]);
-            if (range[1] >= body.directory.count - 1)
-                body.directory.loadMore();
-        }
+        onTriggered: body.settleNow()
     }
 
     Keys.onPressed: event => handleKey(event)
 
+    function previewKey(event) {
+        const alt = (event.modifiers & Qt.AltModifier) !== 0;
+        const ctrl = (event.modifiers & Qt.ControlModifier) !== 0;
+        const shift = (event.modifiers & Qt.ShiftModifier) !== 0;
+        switch (event.key) {
+        case Qt.Key_Space:
+            if (alt)
+                return "";
+            if (shift)
+                return "step";
+            return ctrl || event.isAutoRepeat ? "" : "toggle";
+        case Qt.Key_PageUp:
+        case Qt.Key_PageDown:
+            return alt && !ctrl && !shift ? "scroll" : "";
+        case Qt.Key_Left:
+        case Qt.Key_Right:
+        case Qt.Key_0:
+            return alt && ctrl && !shift ? "resize" : "";
+        default:
+            return "";
+        }
+    }
+
+    function previewStep(event) {
+        switch (event.key) {
+        case Qt.Key_Space:
+            return (event.modifiers & Qt.ControlModifier) !== 0 ? -1 : 1;
+        case Qt.Key_PageUp:
+        case Qt.Key_Left:
+            return -1;
+        case Qt.Key_0:
+            return 0;
+        default:
+            return 1;
+        }
+    }
+
     function handleKey(event) {
         const modifiers = event.modifiers;
         const columns = view?.columnsPerRow ?? 1;
+        const preview = previewKeys ? previewKey(event) : "";
+        if (preview !== "") {
+            previewKeyRequested(preview, previewStep(event));
+            event.accepted = true;
+            return;
+        }
         if ((modifiers & Qt.AltModifier) !== 0)
             return;
         switch (event.key) {
@@ -392,6 +525,8 @@ FocusScope {
             moveCursor(-pageStep(), modifiers);
             break;
         case Qt.Key_Space:
+            if (previewKeys && event.isAutoRepeat && (modifiers & Qt.ControlModifier) === 0)
+                break;
             toggleAtCursor();
             break;
         case Qt.Key_Escape:
@@ -481,7 +616,6 @@ FocusScope {
 
         FileColumnsView {
             body: body
-            onViewportChanged: settle.restart()
         }
     }
 
@@ -576,7 +710,7 @@ FocusScope {
     LoadingSkeleton {
         anchors.fill: viewLoader
         anchors.topMargin: body.view?.headerItem?.height ?? 0
-        visible: body.listing && !body.columnsMode
+        visible: body.slowListing && !body.columnsMode
         rowHeight: body.viewMode === "grid" ? body.iconSize : FileBrowserMetrics.listRowHeightFor(body.iconSize)
     }
 

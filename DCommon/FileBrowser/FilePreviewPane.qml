@@ -3,115 +3,265 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import qs.DCommon.Common
 import qs.DCommon.Widgets
+import "FilePreview.js" as FilePreview
 
 Item {
     id: pane
 
-    property var entry: null
+    property var entries: []
+    property var sourceModel: null
     property var backend: null
     property real imageSizeLimit: -1
+    property bool includeHidden: false
+    property bool readsAllowed: true
+    property bool thumbnailsEnabled: true
+    property color chipColor: Style.chipSurface
+    property string caption: ""
+    property bool closable: false
+    readonly property color surfaceColor: chipColor
+    property var viewerSources: ({
+            "image": "FilePreviewImage.qml",
+            "svg": "FilePreviewImage.qml",
+            "thumbnail": "FilePreviewImage.qml",
+            "text": "FilePreviewText.qml",
+            "folder": "FilePreviewSize.qml"
+        })
 
-    readonly property string path: entry?.path ?? ""
-    readonly property string mime: entry?.mime ?? ""
-    readonly property bool imageLike: mime.startsWith("image/") && (imageSizeLimit < 0 || (entry?.size ?? 0) <= imageSizeLimit)
-    readonly property bool textLike: mime.startsWith("text/") || mime.startsWith("application/")
-    readonly property bool canPreview: textLike && backend !== null && typeof backend.preview === "function"
-    readonly property var details: ["type", "size", "modified", "created", "owner", "permissions"]
+    property var shownEntries: []
 
-    property string text: ""
-    property bool binary: false
-    property bool truncated: false
-    property bool loading: false
-    property int request: 0
+    readonly property var entry: shownEntries[0] ?? null
+    readonly property string viewer: {
+        const chosen = FilePreview.viewerFor(entry, imageSizeLimit);
+        return readsAllowed || chosen === "folder" ? chosen : "";
+    }
+    readonly property string identityKey: `${readsAllowed}:${imageSizeLimit}:${includeHidden}:${thumbnailsEnabled}\n` + shownEntries.map(item => `${item.path}:${item.mime}:${item.thumbnailable}`).join("\n")
+    readonly property string versionKey: shownEntries.map(item => `${item.mtimeMs}:${item.size}`).join("\n")
+    readonly property var viewerItem: current ? viewerLoader.item : null
+    readonly property var rows: {
+        const extra = viewerItem?.rows ?? [];
+        const replaced = ({});
+        for (const row of extra)
+            replaced[row.id] = row;
+        const head = ["type", "size"];
+        const tail = ["modified", "created", "owner", "permissions"];
+        const make = id => replaced[id] ?? (entry ? {
+                    "id": id,
+                    "label": FileColumns.label(id),
+                    "value": FileColumns.value(id, entry)
+                } : null);
+        const middle = extra.filter(row => !head.includes(row.id) && !tail.includes(row.id));
+        return head.map(make).concat(middle, tail.map(make)).filter(row => row && row.value !== "");
+    }
 
-    function load() {
-        text = "";
-        binary = false;
-        truncated = false;
-        const current = ++request;
-        if (!canPreview || path === "") {
-            loading = false;
+    property var settledEntries: []
+    property string settledViewer: ""
+    property bool current: false
+    property real lastMove: 0
+    property int revision: 0
+
+    signal closeRequested
+
+    function scrollPage(direction) {
+        if (typeof viewerItem?.scrollPage === "function") {
+            viewerItem.scrollPage(direction);
             return;
         }
-        loading = true;
-        backend.preview(path, FileBrowserMetrics.previewBytes, result => {
-            if (current !== pane.request)
-                return;
-            pane.loading = false;
-            if (result.error) {
-                pane.binary = true;
-                return;
-            }
-            pane.text = result.text ?? "";
-            pane.binary = result.binary === true;
-            pane.truncated = result.truncated === true;
+        info.contentY = Math.max(0, Math.min(info.contentHeight - info.height, info.contentY + direction * info.height));
+    }
+
+    function adoptEntries() {
+        adopt.stop();
+        if (entries.length === 0) {
+            shownEntries = [];
+            return;
+        }
+        const next = Object.assign({}, entries[0]);
+        if (shownEntries.length === 1 && JSON.stringify(shownEntries[0]) === JSON.stringify(next))
+            return;
+        shownEntries = [next];
+    }
+
+    function settleNow() {
+        adoptEntries();
+        settle.stop();
+        refresh.stop();
+        settledEntries = shownEntries;
+        settledViewer = viewer;
+        current = true;
+        const name = viewerSources[viewer] ?? "";
+        const source = name === "" ? "" : String(Qt.resolvedUrl(name));
+        if (String(viewerLoader.source) === source) {
+            revision++;
+            return;
+        }
+        if (source === "") {
+            viewerLoader.source = "";
+            return;
+        }
+        viewerLoader.setSource(source, {
+            "pane": pane
         });
     }
 
-    onPathChanged: debounce.restart()
-    Component.onCompleted: debounce.restart()
+    onEntriesChanged: adopt.restart()
+    onIdentityKeyChanged: {
+        current = false;
+        refresh.stop();
+        const now = Date.now();
+        settle.interval = now - lastMove < FileBrowserMetrics.settleInterval ? FileBrowserMetrics.settleInterval : 0;
+        lastMove = now;
+        settle.restart();
+    }
+    onVersionKeyChanged: {
+        if (!current || refresh.running)
+            return;
+        refresh.start();
+    }
+    Component.onCompleted: adopt.restart()
+
+    Connections {
+        target: pane.sourceModel
+
+        function onDataChanged() {
+            adopt.restart();
+        }
+    }
 
     Timer {
-        id: debounce
+        id: adopt
+
+        interval: 0
+        onTriggered: pane.adoptEntries()
+    }
+
+    Timer {
+        id: settle
 
         interval: FileBrowserMetrics.settleInterval
-        onTriggered: pane.load()
+        onTriggered: pane.settleNow()
+    }
+
+    Timer {
+        id: refresh
+
+        interval: FileBrowserMetrics.previewRefreshInterval
+        onTriggered: pane.settleNow()
+    }
+
+    Rectangle {
+        anchors.fill: parent
+        radius: FileBrowserMetrics.previewCardRadius
+        color: pane.surfaceColor
+    }
+
+    Item {
+        id: stage
+
+        anchors.top: parent.top
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.bottom: info.top
+        anchors.topMargin: FileBrowserMetrics.previewCardPadding
+        anchors.leftMargin: FileBrowserMetrics.previewCardPadding
+        anchors.rightMargin: FileBrowserMetrics.previewCardPadding
+        anchors.bottomMargin: Style.spacingM
+        visible: pane.shownEntries.length > 0
+
+        readonly property int iconSize: Math.max(0, Math.min(FileBrowserMetrics.previewIconSize, width, height))
+        readonly property bool showsContent: pane.viewerItem?.showsContent ?? false
+        readonly property string stand: {
+            if (!pane.entry || !["image", "svg", "thumbnail"].includes(pane.viewer))
+                return "";
+            if (pane.entry.thumbnail)
+                return FilePaths.toFileUrl(pane.entry.thumbnail);
+            return pane.viewer === "svg" ? FilePaths.toFileUrl(pane.entry.path) : "";
+        }
+        readonly property bool standing: stand !== "" && standIn.status === Image.Ready
+        readonly property real standRaster: iconSize * (Window.window?.devicePixelRatio ?? Screen.devicePixelRatio)
+
+        Image {
+            id: standIn
+
+            anchors.fill: parent
+            visible: stage.standing && !stage.showsContent
+            source: stage.stand
+            sourceSize.width: stage.standRaster
+            sourceSize.height: stage.standRaster
+            fillMode: Image.PreserveAspectFit
+            asynchronous: false
+            cache: true
+        }
+
+        FileItemVisual {
+            anchors.centerIn: parent
+            visible: pane.entry !== null && !stage.showsContent && !stage.standing
+            iconSize: stage.iconSize
+            iconName: pane.entry?.iconName ?? ""
+            thumbnail: pane.entry?.thumbnail ?? ""
+            mime: pane.entry?.mime ?? ""
+            isDir: pane.entry?.isDir ?? false
+            isSymlink: pane.entry?.isSymlink ?? false
+            symlinkBroken: pane.entry?.symlinkBroken ?? false
+            untrusted: pane.entry?.untrusted ?? false
+            unreadable: pane.entry?.unreadable ?? false
+            hidden: pane.entry?.hidden ?? false
+        }
+
+        Loader {
+            id: viewerLoader
+
+            anchors.fill: parent
+            visible: pane.current
+        }
     }
 
     DFlickable {
-        anchors.fill: parent
-        anchors.margins: Style.spacingL
+        id: info
+
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        anchors.leftMargin: FileBrowserMetrics.previewCardPadding
+        anchors.rightMargin: FileBrowserMetrics.previewCardPadding
+        anchors.bottomMargin: FileBrowserMetrics.previewCardPadding
+        height: Math.min(infoColumn.implicitHeight, pane.height * FileBrowserMetrics.previewInfoRatio)
+        visible: pane.shownEntries.length > 0
         contentWidth: width
-        contentHeight: body.implicitHeight
+        contentHeight: infoColumn.implicitHeight
+        interactive: contentHeight > height
         clip: true
 
         Column {
-            id: body
+            id: infoColumn
 
             width: parent.width
             spacing: Style.spacingM
 
-            Item {
+            Column {
                 width: parent.width
-                height: FileBrowserMetrics.previewIconSize
+                spacing: Style.spacingXS
 
-                Image {
-                    anchors.fill: parent
-                    visible: pane.imageLike
-                    source: pane.imageLike ? "file://" + pane.path : ""
-                    asynchronous: true
-                    cache: false
-                    fillMode: Image.PreserveAspectFit
-                    sourceSize.width: width * 2
-                    sourceSize.height: height * 2
+                StyledText {
+                    width: parent.width
+                    text: pane.entry?.name ?? ""
+                    color: Style.surfaceText
+                    font.pixelSize: Style.fontSizeLarge
+                    font.weight: Style.fontWeightMedium
+                    horizontalAlignment: Text.AlignHCenter
+                    wrapMode: Text.WrapAnywhere
+                    maximumLineCount: 3
+                    elide: Text.ElideMiddle
                 }
 
-                FileItemVisual {
-                    anchors.centerIn: parent
-                    visible: !pane.imageLike
-                    iconSize: FileBrowserMetrics.previewIconSize
-                    iconName: pane.entry?.iconName ?? ""
-                    thumbnail: pane.entry?.thumbnail ?? ""
-                    path: pane.path
-                    mime: pane.mime
-                    isDir: false
-                    isSymlink: pane.entry?.isSymlink ?? false
-                    symlinkBroken: pane.entry?.symlinkBroken ?? false
-                    untrusted: pane.entry?.untrusted ?? false
-                    hidden: pane.entry?.hidden ?? false
+                StyledText {
+                    width: parent.width
+                    visible: text !== ""
+                    text: [pane.caption, pane.viewerItem?.note ?? ""].filter(part => part !== "").join(" · ")
+                    color: Style.surfaceVariantText
+                    font.pixelSize: Style.fontSizeSmall
+                    horizontalAlignment: Text.AlignHCenter
+                    elide: Text.ElideRight
                 }
-            }
-
-            StyledText {
-                width: parent.width
-                text: pane.entry?.name ?? ""
-                color: Style.surfaceText
-                font.pixelSize: Style.fontSizeLarge
-                font.weight: Style.fontWeightMedium
-                horizontalAlignment: Text.AlignHCenter
-                wrapMode: Text.WrapAnywhere
-                maximumLineCount: 3
-                elide: Text.ElideMiddle
             }
 
             Column {
@@ -119,27 +269,25 @@ Item {
                 spacing: Style.spacingXS
 
                 Repeater {
-                    model: pane.details
+                    model: pane.rows
 
                     Item {
                         id: detail
 
-                        required property string modelData
-
-                        readonly property string value: pane.entry ? FileColumns.value(modelData, pane.entry) : ""
+                        required property var modelData
 
                         width: parent.width
-                        height: visible ? Math.max(label.implicitHeight, content.implicitHeight) : 0
-                        visible: value !== ""
+                        height: Math.max(label.implicitHeight, content.implicitHeight)
 
                         StyledText {
                             id: label
 
                             anchors.left: parent.left
-                            width: parent.width * 0.4
-                            text: FileColumns.label(detail.modelData)
+                            width: Math.min(FileBrowserMetrics.detailLabelWidth, parent.width / 2)
+                            text: detail.modelData.label
                             color: Style.surfaceVariantText
                             font.pixelSize: Style.fontSizeSmall
+                            horizontalAlignment: Text.AlignLeft
                             elide: Text.ElideRight
                         }
 
@@ -147,43 +295,30 @@ Item {
                             id: content
 
                             anchors.left: label.right
-                            anchors.leftMargin: Style.spacingS
+                            anchors.leftMargin: Style.spacingM
                             anchors.right: parent.right
-                            text: detail.value
+                            text: detail.modelData.value
                             color: Style.surfaceText
                             font.pixelSize: Style.fontSizeSmall
+                            horizontalAlignment: Text.AlignLeft
                             wrapMode: Text.WrapAnywhere
                         }
                     }
                 }
             }
-
-            Rectangle {
-                width: parent.width
-                height: Style.dividerWidth
-                visible: pane.canPreview
-                color: Style.outlineVariant
-            }
-
-            StyledText {
-                width: parent.width
-                visible: pane.canPreview && !pane.loading && (pane.binary || pane.truncated)
-                text: pane.binary ? I18n.tr("Binary file", "preview column note for files without readable text") : I18n.tr("First %1 of %2", "preview column note when only the start of the file is shown").arg(FileFormat.size(pane.text.length)).arg(FileFormat.size(pane.entry?.size ?? 0))
-                color: Style.surfaceVariantText
-                font.pixelSize: Style.fontSizeSmall
-                elide: Text.ElideRight
-            }
-
-            StyledText {
-                width: parent.width
-                visible: pane.canPreview && pane.text !== ""
-                text: pane.text
-                color: Style.surfaceText
-                font.family: Style.monoFontFamily
-                font.pixelSize: Style.fontSizeSmall
-                wrapMode: Text.WrapAnywhere
-                textFormat: Text.PlainText
-            }
         }
+    }
+
+    DActionButton {
+        anchors.top: parent.top
+        anchors.right: parent.right
+        anchors.margins: Style.spacingS
+        visible: pane.closable
+        iconName: "close"
+        iconSize: Style.iconSizeSmall
+        iconColor: Style.surfaceVariantText
+        backgroundColor: pane.surfaceColor
+        tooltipText: I18n.tr("Hide preview", "tooltip on the button closing the preview drawer")
+        onClicked: pane.closeRequested()
     }
 }

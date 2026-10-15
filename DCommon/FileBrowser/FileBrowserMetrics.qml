@@ -35,8 +35,21 @@ Singleton {
     readonly property real columnPaneWidth: Style.sidebarWidth
     readonly property real columnMinPaneWidth: Style.sidebarWidth * 0.7
     readonly property real previewPaneWidth: Style.sidebarWidth * 1.5
+    readonly property real columnSlideDistance: Style.spacingXL
     readonly property real previewIconSize: gridIconSizes[4]
-    readonly property int previewBytes: 16384
+    readonly property int previewBytes: 262144
+    readonly property int previewLineChunk: 1024
+    readonly property real previewInfoRatio: 0.5
+    readonly property int previewRefreshInterval: 1000
+    readonly property int previewImagePool: 4
+    readonly property real previewCardRadius: Style.cornerRadiusL
+    readonly property real previewCardPadding: Style.spacingL
+    readonly property real previewKeyStep: Style.spacingXL
+    readonly property real previewStripHeight: gridIconSizes[1]
+    readonly property real previewStripSmallWidth: Style.buttonHeightS
+    readonly property real previewDrawerMinWidth: Style.sidebarWidth
+    readonly property real previewViewMinWidth: Style.sidebarWidth
+    readonly property real previewDrawerRatio: 0.45
 
     readonly property real listRowHeight: Style.listItemHeight
     readonly property real listRowPadding: Style.spacingL
@@ -56,6 +69,7 @@ Singleton {
     readonly property real columnHeaderHeight: Style.buttonHeightXS
     readonly property real columnHeaderPadding: Style.spacingS
     readonly property real columnGap: Style.spacingM
+    readonly property real columnGripHeight: Style.iconSizeSmall
     readonly property real columnMinWidth: Style.spacingXL * 3
     readonly property real sizeColumnWidth: Style.spacingXL * 4
     readonly property real modifiedColumnWidth: Style.spacingXL * 6
@@ -84,6 +98,10 @@ Singleton {
     readonly property real paneMargin: Style.spacingM
     readonly property real paneMarginHorizontal: Style.spacingL
     readonly property real menuWidth: Style.spacingXL * 9
+    readonly property real menuDividerHeight: Style.spacingS * 2
+    readonly property real detailLabelWidth: Style.spacingXL * 5
+    readonly property real splitterWidth: Style.spacingM
+    readonly property real splitterHandleHeight: Style.iconSizeLarge
     readonly property real menuMargin: Style.spacingL
     readonly property real pickerWidth: Style.launcherWidthLarge
     readonly property real pickerHeight: Style.launcherHeightDefault + Style.spacingXL
@@ -91,6 +109,7 @@ Singleton {
     readonly property real pickerMinHeight: Style.smallBreakpoint
     readonly property real pickerScreenFraction: 0.9
     readonly property int settleInterval: 150
+    readonly property int skeletonDelay: 150
     readonly property int typeAheadInterval: 1000
     readonly property int activationDebounce: 400
     readonly property int suggestionRows: 8

@@ -25,6 +25,10 @@ FocusScope {
     property bool dragEnabled: false
     property bool dropEnabled: false
     property bool showSelectionFooter: multiSelect
+    property bool previewDrawer: false
+    property bool previewOpen: true
+    property real previewWidth: 0
+    property bool previewKeys: false
     property bool escapeClearsSelection: true
     property string emptyText: I18n.tr("This folder is empty", "empty directory placeholder")
     property Component header: null
@@ -59,7 +63,7 @@ FocusScope {
     readonly property bool sidebarShown: showSidebar && width >= sidebarBreakpoint
     readonly property string homePath: backend?.userDirs?.find(dir => dir.key === "home")?.path ?? FilePaths.home
     readonly property alias selection: selectionModel
-    readonly property alias directory: directory
+    readonly property var directory: pool.active ?? pool.empty
     readonly property alias body: viewBody
     readonly property var currentEntry: viewBody.cursorEntry()
     readonly property var selectedEntries: viewBody.selectedEntries()
@@ -78,6 +82,8 @@ FocusScope {
     signal sortRequested(string key)
     signal zoomRequested(string viewMode, int level)
     signal columnResizeRequested(string id, real width)
+    signal previewToggleRequested
+    signal previewResized(real width)
     signal focusRequested
     signal tabRequested(string path)
     signal pathMenuRequested(string path, real pointX, real pointY)
@@ -190,6 +196,13 @@ FocusScope {
         history.marker = marker();
     }
 
+    function _applyPendingScroll() {
+        if (!restoreScroll.armed || root.directory.loading)
+            return;
+        restoreScroll.armed = false;
+        viewBody.scrollTo(restoreScroll.pending);
+    }
+
     function _applyPendingReveal() {
         if (_pendingReveal.length === 0)
             return;
@@ -213,14 +226,14 @@ FocusScope {
         id: optionsSettle
 
         interval: 0
-        onTriggered: directory.repage()
+        onTriggered: pool.repageAll()
     }
 
-    DirectoryModel {
-        id: directory
+    DirectoryPool {
+        id: pool
 
         backend: root.backend
-        path: root.path === root.unlistedPath ? "" : root.path
+        activePath: root.path === root.unlistedPath ? "" : root.path
         includeHidden: root.showHidden
         filters: root.filters
         sortKey: root.sortKey
@@ -230,9 +243,23 @@ FocusScope {
         thumbnailsEnabled: root.thumbnailsEnabled
         thumbnailSizeLimit: root.thumbnailSizeLimit
         networkThumbnails: root.networkThumbnails
-        onGone: history.up()
-        onListed: root._applyPendingReveal()
-        onEntriesAdded: root._applyPendingReveal()
+    }
+
+    Connections {
+        target: root.directory
+
+        function onGone() {
+            history.up();
+        }
+
+        function onListed() {
+            root._applyPendingReveal();
+            root._applyPendingScroll();
+        }
+
+        function onEntriesAdded() {
+            root._applyPendingReveal();
+        }
     }
 
     SelectionModel {
@@ -243,9 +270,12 @@ FocusScope {
         id: history
 
         onRestored: saved => {
-            if (saved?.cursor)
+            if (!saved)
+                return;
+            if (saved.cursor)
                 selectionModel.select(saved.cursor);
-            restoreScroll.pending = saved?.contentY ?? 0;
+            restoreScroll.pending = saved.contentY ?? 0;
+            restoreScroll.armed = true;
             restoreScroll.restart();
         }
     }
@@ -254,9 +284,10 @@ FocusScope {
         id: restoreScroll
 
         property real pending: 0
+        property bool armed: false
 
         interval: 0
-        onTriggered: viewBody.scrollTo(pending)
+        onTriggered: root._applyPendingScroll()
     }
 
     FileBrowserSidebar {
@@ -389,9 +420,10 @@ FocusScope {
                 anchors.topMargin: root.paneMargin
                 anchors.bottomMargin: root.paneMargin
                 anchors.leftMargin: root.paneMarginHorizontal
-                anchors.rightMargin: root.paneMarginHorizontal
+                anchors.rightMargin: root.paneMarginHorizontal + drawer.width
                 focus: true
-                directory: directory
+                directory: root.directory
+                directoryPool: pool
                 selection: selectionModel
                 viewMode: root.viewMode
                 gridZoom: root.gridZoom
@@ -405,9 +437,12 @@ FocusScope {
                 dragEnabled: root.dragEnabled
                 dropEnabled: root.dropEnabled
                 showSelectionFooter: root.showSelectionFooter
+                previewOpen: root.previewOpen
+                previewKeys: root.previewKeys
                 escapeClearsSelection: root.escapeClearsSelection
                 emptyText: root.emptyText
                 surfaceColor: root.paneColor
+                chipColor: root.chipColor
                 header: root.header
                 cutSet: root.cutSet
                 singleClickActivates: root.singleClickActivates
@@ -436,6 +471,17 @@ FocusScope {
                 onSortRequested: key => root.sortRequested(key)
                 onZoomRequested: (mode, level) => root.zoomRequested(mode, level)
                 onColumnResizeRequested: (id, width) => root.columnResizeRequested(id, width)
+                onDirectoryReplaced: {
+                    if (!root.directory.loading)
+                        root._applyPendingReveal();
+                }
+                onPreviewKeyRequested: (action, step) => {
+                    if (action === "toggle") {
+                        root.previewToggleRequested();
+                        return;
+                    }
+                    drawer.handleKey(action, step);
+                }
                 onFocusRequested: {
                     root._pendingReveal = [];
                     root._pendingRename = "";
@@ -454,6 +500,23 @@ FocusScope {
                     }
                     root.navigate(target);
                 }
+            }
+
+            FilePreviewDrawer {
+                id: drawer
+
+                anchors.top: viewBody.top
+                anchors.bottom: viewBody.bottom
+                anchors.right: parent.right
+                anchors.rightMargin: root.paneMarginHorizontal
+                body: viewBody
+                visible: root.previewDrawer
+                open: root.previewDrawer && root.previewOpen && !viewBody.columnsMode
+                available: pane.width - root.paneMarginHorizontal * 2
+                preferredWidth: root.previewWidth
+                chipColor: root.chipColor
+                onResized: width => root.previewResized(width)
+                onFocusRequested: root.focusRequested()
             }
         }
     }

@@ -3,231 +3,534 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import qs.DCommon.Common
 import qs.DCommon.Widgets
+import "FileColumnsLayout.js" as Layout
+import "FilePreview.js" as FilePreview
 
 Item {
     id: columns
 
     required property var body
 
-    readonly property var activeList: activeColumn.list
-    readonly property int columnsPerRow: 1
-    readonly property real rowPitch: activeList.rowPitch
-    readonly property real originY: activeList.originY
-    readonly property real contentY: activeList.contentY
-    readonly property real contentHeight: activeList.contentHeight
-    readonly property var headerItem: null
+    readonly property var pool: body.directoryPool
+    readonly property bool mirrored: columns.LayoutMirroring.enabled
     readonly property string activePath: body.directory.path
-    readonly property string rootPath: {
-        const home = body.homePath;
-        if (home !== "" && (activePath === home || activePath.startsWith(home + "/")))
-            return home;
-        return "/";
-    }
-    readonly property var ancestors: {
-        const out = [];
-        let current = FilePaths.parentOf(activePath);
-        while (current !== "" && current.length >= rootPath.length) {
-            out.unshift(current);
-            if (current === rootPath)
-                break;
-            current = FilePaths.parentOf(current);
-        }
-        return out;
-    }
+    readonly property var ancestors: Layout.chainFor(activePath, body.homePath, FilePaths.parentOf)
+    readonly property var chain: ancestors.concat([activePath])
+    readonly property int activeDepth: ancestors.length
     readonly property var picked: body.selectedEntries()
     readonly property var pickedEntry: picked.length === 1 ? picked[0] : null
     readonly property string lookaheadPath: pickedEntry?.isDir ? pickedEntry.path : ""
     readonly property bool trailingPane: picked.length > 1 || (pickedEntry !== null && !pickedEntry.isDir)
-    readonly property int dirColumnCount: ancestors.length + 1 + (lookaheadPath !== "" ? 1 : 0)
-    readonly property real dirColumnWidth: Math.floor(Math.max(FileBrowserMetrics.columnMinPaneWidth, Math.min(FileBrowserMetrics.columnPaneWidth, (strip.width - (trailingPane ? FileBrowserMetrics.previewPaneWidth : 0)) / dirColumnCount)))
-    readonly property real trailingWidth: Math.max(FileBrowserMetrics.previewPaneWidth, strip.width - activeColumn.x - activeColumn.width)
+    readonly property real columnWidth: Layout.columnWidth(strip.width, FileBrowserMetrics.previewPaneWidth, FileBrowserMetrics.columnMinPaneWidth, FileBrowserMetrics.columnPaneWidth)
+    readonly property real activeEnd: (activeDepth + 1) * columnWidth
+    readonly property real trailingWidth: stripEnd - activeEnd
+    readonly property var activeList: activeColumn?.list ?? null
+    readonly property int columnsPerRow: 1
+    readonly property real rowPitch: activeList?.rowPitch ?? 0
+    readonly property real originY: activeList?.originY ?? 0
+    readonly property real contentY: activeList?.contentY ?? 0
+    readonly property real contentHeight: activeList?.contentHeight ?? 0
+    readonly property var headerItem: null
 
-    signal viewportChanged
+    property real stripEnd: 0
+    property var activeColumn: null
+    property var heldPaths: []
+    property var _columns: []
+    property int _stacking: 0
+    property bool _jump: false
 
-    function revealActive() {
-        strip.contentX = Math.max(0, row.width - strip.width);
+    function currentList() {
+        const path = body.directory.path;
+        return (columnFor(path, depthOf(path)) ?? activeColumn)?.list ?? null;
     }
 
     function positionViewAtIndex(index, mode) {
-        activeList.positionViewAtIndex(index, mode);
+        currentList()?.positionViewAtIndex(index, mode);
     }
 
     function positionViewAtBeginning() {
-        activeList.positionViewAtBeginning();
+        currentList()?.positionViewAtBeginning();
+    }
+
+    function revealIndex(index) {
+        currentList()?.revealIndex(index);
     }
 
     function itemAtIndex(index) {
-        return activeList.itemAtIndex(index);
+        return currentList()?.itemAtIndex(index) ?? null;
     }
 
     function visibleRange() {
-        return activeList.visibleRange();
+        return currentList()?.visibleRange() ?? [0, -1];
     }
 
-    function syncAncestors() {
-        const wanted = ancestors;
-        let common = 0;
-        while (common < wanted.length && common < ancestorModel.count && ancestorModel.get(common).dirPath === wanted[common])
-            common++;
-        while (ancestorModel.count > common)
-            ancestorModel.remove(ancestorModel.count - 1);
-        for (let i = common; i < wanted.length; i++)
-            ancestorModel.append({
-                "dirPath": wanted[i]
+    function logicalX(depth) {
+        return depth * columnWidth;
+    }
+
+    function physicalX(logical, width) {
+        return mirrored ? stripEnd - logical - width : logical;
+    }
+
+    function physicalContentX(logical) {
+        return mirrored ? Math.max(0, stripEnd - strip.width - logical) : logical;
+    }
+
+    function logicalContentX() {
+        return mirrored ? Math.max(0, stripEnd - strip.width - strip.contentX) : strip.contentX;
+    }
+
+    function depthOf(path) {
+        return Layout.chainFor(path, body.homePath, FilePaths.parentOf).length;
+    }
+
+    function revealActive(depth, animate) {
+        const previous = logicalContentX();
+        const target = Layout.revealTarget(previous, depth, columnWidth, FileBrowserMetrics.previewPaneWidth, strip.width);
+        scrollAnim.stop();
+        stripEnd = target.stripEnd;
+        strip.contentX = physicalContentX(previous);
+        const to = physicalContentX(target.contentX);
+        if (!animate || !FileBrowserMetrics.animationsEnabled || to === strip.contentX) {
+            strip.contentX = to;
+            return;
+        }
+        scrollAnim.to = to;
+        scrollAnim.restart();
+    }
+
+    function columnFor(path, depth) {
+        return _columns.find(column => !column.leaving && column.dirPath === path && column.depth === depth) ?? null;
+    }
+
+    function ensureColumn(path, depth, entrance) {
+        const open = columnFor(path, depth);
+        if (open)
+            return open;
+        const parked = _columns.find(column => column.leaving && column.dirPath === path && column.depth === depth);
+        if (parked) {
+            parked.revive();
+            return parked;
+        }
+        const replacing = _columns.some(column => !column.leaving && column.depth === depth);
+        const column = columnComponent.createObject(lane, {
+            "dirPath": path,
+            "depth": depth,
+            "model": pool.modelFor(path),
+            "entrance": entrance ?? (replacing ? "fade" : "slide"),
+            "z": ++_stacking
+        });
+        _columns = _columns.concat([column]);
+        heldPaths = _columns.map(item => item.dirPath);
+        return column;
+    }
+
+    function remove(column) {
+        _columns = _columns.filter(item => item !== column);
+        heldPaths = _columns.map(item => item.dirPath);
+        if (activeColumn === column)
+            activeColumn = null;
+        column.destroy();
+    }
+
+    function columnShown(column) {
+        for (const other of _columns.slice()) {
+            if (other.leaving && other.exit === "replaced" && other.depth === column.depth)
+                remove(other);
+        }
+    }
+
+    function wantedColumns() {
+        const out = chain.map((path, depth) => ({
+                    "path": path,
+                    "depth": depth
+                })).filter(item => item.path !== "");
+        if (lookaheadPath !== "")
+            out.push({
+                "path": lookaheadPath,
+                "depth": chain.length
             });
+        return out;
     }
 
-    function entryOf(model, index) {
-        return index >= 0 && index < model.count ? model.entries.get(index) : null;
-    }
-
-    onAncestorsChanged: syncAncestors()
-    onActivePathChanged: Qt.callLater(revealActive)
-    Component.onCompleted: syncAncestors()
-
-    Connections {
-        target: columns.body.selection
-
-        function onCursorPathChanged() {
-            Qt.callLater(columns.revealActive);
-        }
-    }
-
-    ListModel {
-        id: ancestorModel
-    }
-
-    component ColumnFrame: Item {
-        id: frame
-
-        property real paneWidth: columns.dirColumnWidth
-
-        width: paneWidth
-        height: strip.height
-
-        Rectangle {
-            anchors.right: parent.right
-            anchors.top: parent.top
-            anchors.bottom: parent.bottom
-            width: Style.dividerWidth
-            color: Style.outlineVariant
-        }
-    }
-
-    component DirColumn: ColumnFrame {
-        id: column
-
-        required property string dirPath
-        property string childPath: ""
-
-        readonly property DirectoryModel model: DirectoryModel {
-            backend: columns.body.directory.backend
-            path: column.dirPath
-            includeHidden: columns.body.directory.includeHidden
-            filters: columns.body.directory.filters
-            sortKey: columns.body.directory.sortKey
-            sortDesc: columns.body.directory.sortDesc
-            dirsFirst: columns.body.directory.dirsFirst
-            thumbnailsEnabled: columns.body.directory.thumbnailsEnabled
-            thumbnailSizeLimit: columns.body.directory.thumbnailSizeLimit
-            networkThumbnails: columns.body.directory.networkThumbnails
-            onListed: column.syncChild()
-        }
-        readonly property SelectionModel selection: SelectionModel {}
-
-        function syncChild() {
-            if (childPath === "") {
-                selection.clear();
-                return;
+    function syncColumns() {
+        const wanted = wantedColumns();
+        const keep = new Set(wanted.map(item => item.path + "\n" + item.depth));
+        for (const column of _columns.slice()) {
+            if (column.leaving || keep.has(column.dirPath + "\n" + column.depth))
+                continue;
+            const replacement = _columns.find(other => other !== column && !other.leaving && other.depth === column.depth);
+            if (_jump) {
+                column.leave("none");
+                continue;
             }
-            selection.select(childPath);
+            if (replacement) {
+                column.leave(replacement.shown ? "none" : "replaced");
+                continue;
+            }
+            column.leave("close");
         }
-
-        onChildPathChanged: syncChild()
-
-        TapHandler {
-            acceptedButtons: Qt.LeftButton
-            onTapped: columns.body.openRequested(column.dirPath)
+        for (const item of wanted) {
+            if (!columnFor(item.path, item.depth))
+                ensureColumn(item.path, item.depth, _jump ? "none" : undefined);
         }
-
-        FileDropArea {
-            anchors.fill: parent
-            dropPath: column.dirPath
-            enabled: columns.body.dropEnabled
-            onDropped: drop => columns.body.itemsDropped(column.dirPath, drop)
+        for (const column of _columns.slice()) {
+            if (column.exit === "replaced" && !_columns.some(other => !other.leaving && other.depth === column.depth))
+                column.leave("close");
         }
+        _jump = false;
+        activeColumn = columnFor(activePath, activeDepth);
+    }
 
-        FileListView {
-            id: list
+    onHeldPathsChanged: pool.heldPaths = heldPaths
+    onActivePathChanged: {
+        const depth = depthOf(activePath);
+        _jump = columnFor(activePath, depth) === null;
+        activeColumn = activePath === "" ? null : ensureColumn(activePath, depth, _jump ? "none" : undefined);
+        revealActive(depth, !_jump);
+        sync.restart();
+    }
+    onLookaheadPathChanged: {
+        if (lookaheadPath !== "")
+            ensureColumn(lookaheadPath, depthOf(body.directory.path) + 1);
+        sync.restart();
+    }
+    Component.onCompleted: {
+        _jump = true;
+        activeColumn = activePath === "" ? null : ensureColumn(activePath, activeDepth, "none");
+        revealActive(activeDepth, false);
+        syncColumns();
+    }
+    Component.onDestruction: pool.heldPaths = []
 
-            anchors.fill: parent
-            anchors.rightMargin: Style.dividerWidth
-            selection: column.selection
-            iconSize: columns.body.iconSize
-            cutSet: columns.body.cutSet
-            columnIds: []
-            chevrons: true
-            multiSelect: false
-            dragEnabled: false
-            dropEnabled: columns.body.dropEnabled
-            singleClickActivates: false
-            model: column.model.entries
-            onItemClicked: index => columns.body.revealRequested(columns.entryOf(column.model, index).path)
-            onItemActivated: index => {
-                const entry = columns.entryOf(column.model, index);
-                if (!entry)
-                    return;
-                if (entry.isDir) {
-                    columns.body.openRequested(entry.path);
+    Timer {
+        id: sync
+
+        interval: 0
+        onTriggered: columns.syncColumns()
+    }
+
+    Component {
+        id: columnComponent
+
+        Item {
+            id: column
+
+            required property string dirPath
+            required property int depth
+            required property var model
+            property string entrance: "slide"
+            property bool leaving: false
+            property string exit: ""
+            property bool shown: false
+            property bool slowListing: false
+            property real presence: 0
+            property real span: 1
+            property real slide: entrance === "slide" ? (columns.mirrored ? FileBrowserMetrics.columnSlideDistance : -FileBrowserMetrics.columnSlideDistance) : 0
+
+            readonly property bool active: !leaving && columns.activePath === dirPath && columns.activeDepth === depth
+            readonly property string childPath: active || leaving || columns.chain[depth] !== dirPath ? "" : (columns.chain[depth + 1] ?? "")
+            readonly property bool listing: model.loading && model.count === 0
+            readonly property SelectionModel ownSelection: SelectionModel {}
+            readonly property alias list: list
+
+            function entryAt(index) {
+                return index >= 0 && index < model.count ? model.entries.get(index) : null;
+            }
+
+            function syncChild() {
+                if (childPath === "") {
+                    ownSelection.clear();
                     return;
                 }
-                columns.body.activateRequested(entry);
+                ownSelection.select(childPath);
+                const index = model.indexOfPath(childPath);
+                if (index >= 0)
+                    list.revealIndex(index);
             }
-            onItemMiddleClicked: index => {
-                const entry = columns.entryOf(column.model, index);
-                if (entry?.isDir)
-                    columns.body.tabRequested(entry.path);
-            }
-            onItemContextMenu: (index, pointX, pointY, modifiers) => {
-                const entry = columns.entryOf(column.model, index);
-                if (!entry)
-                    return;
-                columns.body.revealRequested(entry.path);
-                const point = list.mapToItem(columns.body, pointX, pointY);
-                columns.body.itemMenuRequested(index, point.x, point.y, modifiers);
-            }
-            onItemDropped: (index, drop) => columns.body.itemsDropped(columns.entryOf(column.model, index).path, drop)
-            onContentYChanged: settle.restart()
-            onCountChanged: settle.restart()
-        }
 
-        Timer {
-            id: settle
-
-            interval: FileBrowserMetrics.settleInterval
-            onTriggered: {
+            function requestVisible() {
+                settle.stop();
                 const range = list.visibleRange();
-                column.model.requestThumbnails(range[0], range[1]);
-                if (range[1] >= column.model.count - 1)
-                    column.model.loadMore();
+                model.requestThumbnails(range[0], range[1]);
+                if (range[1] >= model.count - 1)
+                    model.loadMore();
             }
-        }
 
-        LoadingSkeleton {
-            anchors.fill: list
-            visible: column.model.loading && column.model.count === 0
-            rowHeight: list.rowHeight
-        }
+            function leave(mode) {
+                leaving = true;
+                exit = mode;
+                grace.stop();
+                switch (mode) {
+                case "replaced":
+                    return;
+                case "close":
+                    if (FileBrowserMetrics.animationsEnabled && shown) {
+                        closeAnim.restart();
+                        return;
+                    }
+                    break;
+                }
+                columns.remove(column);
+            }
 
-        StyledText {
-            anchors.centerIn: parent
-            width: parent.width - Style.spacingL * 2
-            visible: !column.model.loading && column.model.count === 0
-            text: column.model.error !== "" ? FileFormat.listingError(column.model.errorCode) : I18n.tr("This folder is empty", "empty directory placeholder")
-            color: Style.surfaceVariantText
-            font.pixelSize: Style.fontSizeMedium
-            horizontalAlignment: Text.AlignHCenter
-            wrapMode: Text.Wrap
+            function revive() {
+                closeAnim.stop();
+                leaving = false;
+                exit = "";
+                entrance = "fade";
+                span = 1;
+                presence = shown ? 1 : 0;
+            }
+
+            x: columns.physicalX(columns.logicalX(depth), width)
+            width: columns.columnWidth * span
+            height: lane.height
+            clip: true
+            enabled: !leaving
+            opacity: presence
+            transform: Translate {
+                x: column.slide
+            }
+
+            Behavior on presence {
+                enabled: FileBrowserMetrics.animationsEnabled && column.entrance !== "none" && !column.leaving
+                DAnim {
+                    duration: Style.expressiveDurations.expressiveEffects
+                    easing.bezierCurve: Style.expressiveCurves.expressiveEffects
+                }
+            }
+
+            Behavior on slide {
+                enabled: FileBrowserMetrics.animationsEnabled && !column.leaving
+                DAnim {
+                    duration: Style.expressiveDurations.expressiveFastSpatial
+                }
+            }
+
+            Behavior on span {
+                enabled: FileBrowserMetrics.animationsEnabled && !column.leaving
+                DAnim {
+                    duration: Style.expressiveDurations.expressiveFastSpatial
+                }
+            }
+
+            SequentialAnimation {
+                id: closeAnim
+
+                ParallelAnimation {
+                    DAnim {
+                        target: column
+                        property: "span"
+                        to: 0
+                        duration: Style.expressiveDurations.expressiveFastSpatial
+                    }
+
+                    DAnim {
+                        target: column
+                        property: "presence"
+                        to: 0
+                        duration: Style.expressiveDurations.expressiveEffects
+                        easing.bezierCurve: Style.expressiveCurves.expressiveEffects
+                    }
+                }
+
+                ScriptAction {
+                    script: columns.remove(column)
+                }
+            }
+
+            Timer {
+                id: grace
+
+                interval: FileBrowserMetrics.skeletonDelay
+                onTriggered: {
+                    column.slowListing = column.listing;
+                    column.shown = true;
+                }
+            }
+
+            Timer {
+                id: settle
+
+                interval: FileBrowserMetrics.settleInterval
+                onTriggered: column.requestVisible()
+            }
+
+            Connections {
+                target: column.model
+
+                function onGone() {
+                    columns.remove(column);
+                }
+
+                function onListed() {
+                    if (column.leaving)
+                        return;
+                    column.syncChild();
+                    column.shown = true;
+                    column.requestVisible();
+                }
+
+                function onLoadingChanged() {
+                    if (!column.model.loading)
+                        column.shown = true;
+                }
+            }
+
+            onChildPathChanged: syncChild()
+            onListingChanged: {
+                if (listing) {
+                    grace.restart();
+                    return;
+                }
+                grace.stop();
+                slowListing = false;
+            }
+            onShownChanged: {
+                if (!shown || leaving)
+                    return;
+                presence = 1;
+                slide = 0;
+                columns.columnShown(column);
+            }
+            Component.onCompleted: {
+                syncChild();
+                if (listing) {
+                    grace.start();
+                    return;
+                }
+                shown = true;
+                requestVisible();
+            }
+
+            Rectangle {
+                anchors.fill: parent
+                color: columns.body.surfaceColor
+            }
+
+            TapHandler {
+                enabled: !column.active && !column.leaving
+                acceptedButtons: Qt.LeftButton
+                onTapped: columns.body.openRequested(column.dirPath)
+            }
+
+            FileDropArea {
+                anchors.fill: parent
+                dropPath: column.dirPath
+                enabled: !column.active && !column.leaving && columns.body.dropEnabled
+                onDropped: drop => columns.body.itemsDropped(column.dirPath, drop)
+            }
+
+            FileListView {
+                id: list
+
+                anchors.top: parent.top
+                anchors.bottom: parent.bottom
+                anchors.left: parent.left
+                width: columns.columnWidth - Style.dividerWidth
+                selection: column.active ? columns.body.selection : column.ownSelection
+                iconSize: columns.body.iconSize
+                renamingPath: column.active ? columns.body.renamingPath : ""
+                cutSet: columns.body.cutSet
+                columnIds: []
+                chevrons: true
+                singleClickActivates: column.active && columns.body.singleClickActivates
+                nameHighlight: column.active ? columns.body.nameHighlight : ""
+                multiSelect: column.active && columns.body.multiSelect
+                dragEnabled: column.active && columns.body.dragEnabled
+                dropEnabled: columns.body.dropEnabled && !column.leaving
+                model: column.model.entries
+                onItemClicked: (index, modifiers) => {
+                    if (column.active) {
+                        columns.body.click(index, modifiers);
+                        return;
+                    }
+                    const entry = column.entryAt(index);
+                    if (entry)
+                        columns.body.revealRequested(entry.path);
+                }
+                onItemActivated: index => {
+                    if (column.active) {
+                        columns.body.activate(index);
+                        return;
+                    }
+                    const entry = column.entryAt(index);
+                    if (!entry)
+                        return;
+                    if (entry.isDir) {
+                        columns.body.openRequested(entry.path);
+                        return;
+                    }
+                    columns.body.activateRequested(entry);
+                }
+                onItemMiddleClicked: index => {
+                    const entry = column.entryAt(index);
+                    if (entry?.isDir)
+                        columns.body.tabRequested(entry.path);
+                }
+                onItemContextMenu: (index, pointX, pointY, modifiers) => {
+                    if (!column.active) {
+                        const entry = column.entryAt(index);
+                        if (!entry)
+                            return;
+                        columns.body.revealRequested(entry.path);
+                    }
+                    columns.body.forwardItemMenu(list, index, pointX, pointY, modifiers);
+                }
+                onItemDragStarted: index => {
+                    if (column.active)
+                        columns.body.startDrag(index);
+                }
+                onItemDropped: (index, drop) => columns.body.itemsDropped(column.entryAt(index).path, drop)
+                onRenameSubmitted: (target, name) => columns.body.finishRename(target, name)
+                onRenameCancelled: columns.body.finishRename("", "")
+                onContentYChanged: settle.restart()
+                onCountChanged: settle.restart()
+
+                Loader {
+                    active: column.active
+                    sourceComponent: FileViewBackground {
+                        view: list
+                        selection: columns.body.selection
+                        dropPath: column.dirPath
+                        onCleared: {
+                            columns.body.focusRequested();
+                            columns.body.selection.clear();
+                        }
+                        onContextMenuRequested: (pointX, pointY) => {
+                            const point = list.mapToItem(columns.body, pointX, pointY);
+                            columns.body.backgroundMenuRequested(point.x, point.y);
+                        }
+                        onDropped: drop => columns.body.itemsDropped(column.dirPath, drop)
+                    }
+                }
+            }
+
+            LoadingSkeleton {
+                anchors.fill: list
+                visible: column.slowListing
+                rowHeight: list.rowHeight
+            }
+
+            StyledText {
+                anchors.centerIn: list
+                width: list.width - Style.spacingL * 2
+                visible: !column.model.loading && column.model.count === 0
+                text: column.model.error !== "" ? FileFormat.listingError(column.model.errorCode) : I18n.tr("This folder is empty", "empty directory placeholder")
+                color: Style.surfaceVariantText
+                font.pixelSize: Style.fontSizeMedium
+                horizontalAlignment: Text.AlignHCenter
+                wrapMode: Text.Wrap
+            }
+
+            Rectangle {
+                anchors.right: parent.right
+                anchors.top: parent.top
+                anchors.bottom: parent.bottom
+                width: Style.dividerWidth
+                color: Style.outlineVariant
+            }
         }
     }
 
@@ -235,151 +538,49 @@ Item {
         id: strip
 
         anchors.fill: parent
-        contentWidth: row.width
+        contentWidth: columns.stripEnd
         contentHeight: height
         flickableDirection: Flickable.HorizontalFlick
         clip: true
-        onContentWidthChanged: columns.revealActive()
-        onWidthChanged: columns.revealActive()
+        onWidthChanged: columns.revealActive(columns.activeDepth, false)
+        onDragStarted: scrollAnim.stop()
 
-        Row {
-            id: row
+        DAnim {
+            id: scrollAnim
 
+            target: strip
+            property: "contentX"
+            duration: Style.expressiveDurations.expressiveFastSpatial
+        }
+
+        Item {
+            id: lane
+
+            width: columns.stripEnd
             height: strip.height
 
-            Repeater {
-                model: ancestorModel
-
-                DirColumn {
-                    required property int index
-
-                    childPath: index + 1 < columns.ancestors.length ? columns.ancestors[index + 1] : columns.activePath
-                }
-            }
-
-            ColumnFrame {
-                id: activeColumn
-
-                readonly property alias list: activeList
-
-                onXChanged: columns.revealActive()
-                onWidthChanged: columns.revealActive()
-
-                FileListView {
-                    id: activeList
-
-                    anchors.fill: parent
-                    anchors.rightMargin: Style.dividerWidth
-                    selection: columns.body.selection
-                    iconSize: columns.body.iconSize
-                    renamingPath: columns.body.renamingPath
-                    cutSet: columns.body.cutSet
-                    columnIds: []
-                    chevrons: true
-                    singleClickActivates: columns.body.singleClickActivates
-                    nameHighlight: columns.body.nameHighlight
-                    multiSelect: columns.body.multiSelect
-                    dragEnabled: columns.body.dragEnabled
-                    dropEnabled: columns.body.dropEnabled
-                    model: columns.body.directory.entries
-                    onItemClicked: (index, modifiers) => columns.body.click(index, modifiers)
-                    onItemActivated: index => columns.body.activate(index)
-                    onItemMiddleClicked: index => columns.body.middleClick(index)
-                    onItemContextMenu: (index, pointX, pointY, modifiers) => columns.body.forwardItemMenu(activeList, index, pointX, pointY, modifiers)
-                    onItemDragStarted: index => columns.body.startDrag(index)
-                    onItemDropped: (index, drop) => columns.body.itemsDropped(columns.body.entryAt(index).path, drop)
-                    onRenameSubmitted: (target, name) => columns.body.finishRename(target, name)
-                    onRenameCancelled: columns.body.finishRename("", "")
-                    onContentYChanged: columns.viewportChanged()
-                    onCountChanged: columns.viewportChanged()
-
-                    FileViewBackground {
-                        view: activeList
-                        selection: columns.body.selection
-                        dropPath: columns.body.directory.path
-                        onCleared: {
-                            columns.body.focusRequested();
-                            columns.body.selection.clear();
-                        }
-                        onContextMenuRequested: (pointX, pointY) => {
-                            const point = activeList.mapToItem(columns.body, pointX, pointY);
-                            columns.body.backgroundMenuRequested(point.x, point.y);
-                        }
-                        onDropped: drop => columns.body.itemsDropped(columns.body.directory.path, drop)
-                    }
-                }
-
-                LoadingSkeleton {
-                    anchors.fill: activeList
-                    visible: columns.body.listing
-                    rowHeight: activeList.rowHeight
-                }
-
-                StyledText {
-                    anchors.centerIn: parent
-                    width: parent.width - Style.spacingL * 2
-                    visible: columns.body.empty
-                    text: I18n.tr("This folder is empty", "empty directory placeholder")
-                    color: Style.surfaceVariantText
-                    font.pixelSize: Style.fontSizeMedium
-                    horizontalAlignment: Text.AlignHCenter
-                    wrapMode: Text.Wrap
-                }
-            }
-
             Loader {
-                active: columns.lookaheadPath !== ""
-                visible: active
-                sourceComponent: DirColumn {
-                    dirPath: columns.lookaheadPath
-                }
-            }
-
-            Loader {
-                active: columns.pickedEntry !== null && !columns.pickedEntry.isDir
-                visible: active
-                sourceComponent: ColumnFrame {
-                    paneWidth: columns.trailingWidth
-
-                    FilePreviewPane {
-                        anchors.fill: parent
-                        anchors.rightMargin: Style.dividerWidth
-                        entry: columns.pickedEntry
-                        backend: columns.body.directory.backend
-                        imageSizeLimit: columns.body.directory.thumbnailSizeLimit
+                x: columns.physicalX(columns.activeEnd + FileBrowserMetrics.contentSpacing, width)
+                width: Math.max(0, columns.trailingWidth - FileBrowserMetrics.contentSpacing)
+                height: lane.height
+                active: columns.body.previewOpen
+                visible: columns.trailingPane && (item?.shownEntries.length ?? 0) > 0
+                sourceComponent: FilePreviewPane {
+                    entries: {
+                        if (!columns.trailingPane)
+                            return [];
+                        const entry = columns.body.previewEntry();
+                        return entry ? [entry] : [];
                     }
-                }
-            }
-
-            Loader {
-                active: columns.picked.length > 1
-                visible: active
-                sourceComponent: ColumnFrame {
-                    paneWidth: columns.trailingWidth
-
-                    Column {
-                        anchors.centerIn: parent
-                        width: parent.width - Style.spacingL * 2
-                        spacing: Style.spacingXS
-
-                        StyledText {
-                            width: parent.width
-                            text: I18n.tr("%1 selected", "preview column header for a multiple selection").arg(FileFormat.count(columns.picked.length))
-                            color: Style.surfaceText
-                            font.pixelSize: Style.fontSizeLarge
-                            font.weight: Style.fontWeightMedium
-                            horizontalAlignment: Text.AlignHCenter
-                        }
-
-                        StyledText {
-                            width: parent.width
-                            visible: columns.body.selectedBytes() >= 0
-                            text: FileFormat.size(columns.body.selectedBytes())
-                            color: Style.surfaceVariantText
-                            font.pixelSize: Style.fontSizeMedium
-                            horizontalAlignment: Text.AlignHCenter
-                        }
-                    }
+                    sourceModel: columns.body.directory.entries
+                    backend: columns.body.directory.backend
+                    imageSizeLimit: columns.body.directory.thumbnailSizeLimit
+                    includeHidden: columns.body.showHidden
+                    readsAllowed: FilePreview.readsAllowed(columns.body.directory)
+                    thumbnailsEnabled: columns.body.directory.thumbnailsEnabled
+                    chipColor: columns.body.chipColor
+                    closable: columns.body.previewKeys
+                    onCloseRequested: columns.body.previewKeyRequested("toggle", 0)
                 }
             }
         }

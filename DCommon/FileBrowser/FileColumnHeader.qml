@@ -30,12 +30,8 @@ Item {
         color: header.backgroundColor
     }
 
-    Rectangle {
-        anchors.left: parent.left
-        anchors.right: parent.right
-        anchors.bottom: parent.bottom
-        height: Style.dividerWidth
-        color: Style.outlineVariant
+    HoverHandler {
+        id: headerHover
     }
 
     component HeaderCell: Item {
@@ -127,23 +123,37 @@ Item {
                 align: FileColumns.specFor(modelData)?.align ?? Text.AlignLeft
 
                 MouseArea {
-                    width: Style.spacingS
-                    height: parent.height
-                    cursorShape: Qt.SizeHorCursor
-                    acceptedButtons: Qt.LeftButton
+                    id: grip
 
                     property real pressX: 0
                     property real pressWidth: 0
 
+                    anchors.right: parent.left
+                    anchors.rightMargin: (FileBrowserMetrics.columnGap - width) / 2
+                    width: FileBrowserMetrics.columnGap
+                    height: parent.height
+                    hoverEnabled: true
+                    cursorShape: Qt.SizeHorCursor
+                    acceptedButtons: Qt.LeftButton
                     onPressed: mouse => {
-                        pressX = mapToItem(header, mouse.x, 0).x;
+                        pressX = mapToItem(null, mouse.x, 0).x;
                         pressWidth = parent.width;
                     }
                     onPositionChanged: mouse => {
                         if (!pressed)
                             return;
-                        const delta = pressX - mapToItem(header, mouse.x, 0).x;
+                        const moved = mapToItem(null, mouse.x, 0).x - pressX;
+                        const delta = header.LayoutMirroring.enabled ? moved : -moved;
                         header.columnResized(parent.modelData, Math.max(FileBrowserMetrics.columnMinWidth, pressWidth + delta));
+                    }
+
+                    Rectangle {
+                        anchors.centerIn: parent
+                        width: Style.outlineWidthFocused
+                        height: FileBrowserMetrics.columnGripHeight
+                        radius: Style.cornerRadiusFull
+                        color: grip.containsMouse || grip.pressed ? Style.primary : Style.outlineVariant
+                        visible: headerHover.hovered || grip.pressed
                     }
                 }
             }
