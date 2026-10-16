@@ -61,7 +61,7 @@ DListView {
     spacing: Style.groupedListGap
     cacheBuffer: Math.max(0, height)
     currentIndex: -1
-    reuseItems: true
+    reuseItems: false
     add: null
 
     delegate: FileRow {

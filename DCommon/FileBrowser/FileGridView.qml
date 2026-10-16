@@ -72,7 +72,7 @@ DGridView {
     cellHeight: iconSize + labelLineHeight * 3 + FileBrowserMetrics.gridTileVerticalPadding * 2 + FileBrowserMetrics.gridNameSpacing * 2
     cacheBuffer: Math.max(0, height)
     currentIndex: -1
-    reuseItems: true
+    reuseItems: false
 
     FontMetrics {
         id: labelMetrics
