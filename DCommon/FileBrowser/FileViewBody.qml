@@ -17,6 +17,7 @@ FocusScope {
     property var columnWidths: ({})
     property string sortKey: "name"
     property bool sortDescending: false
+    property var columnSortKeys: ({})
     property bool showHidden: false
     property bool multiSelect: true
     property bool dragEnabled: true
@@ -735,6 +736,7 @@ FocusScope {
         widths: body.columnWidths
         sortKey: body.sortKey
         sortDescending: body.sortDescending
+        columnSortKeys: body.columnSortKeys
         nameIndent: body.iconSize + FileBrowserMetrics.listRowPadding * 2
         backgroundColor: body.surfaceColor
         onSortRequested: key => body.sortRequested(key)

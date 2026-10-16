@@ -169,9 +169,9 @@ Callbacks receive the method's result object, or `{error, code}` with a stable c
 | `rename(path, name, cb)` | `files.rename`, `{path}` |
 | `trash(paths, cb)` | `files.trash`, `{trashed, failed: [{path, code, error}]}` |
 | `watchEvent(data)` | signal carrying every event of every watch the backend opened: `{watchId, kind, seq, added, addedAt, changed, removed, thumbnails, hidden}`, `kind` one of `batch resync gone thumbnails`; a `batch` carries `hidden` only when that count changed |
-| `search(root, query, options, cb)` | optional, `search.start`. options `{includeHidden, crossDevice, types, modifiedAfterMs, minSize, maxSize, limit}`; result `{searchId, topic, limit}`. `SearchModel` hides the actions when it is missing |
+| `search(root, query, options, cb)` | optional, `search.start`. options `{scope, includeHidden, includeIgnored, fuzzy, contents, direct, crossDevice, types, modifiedAfterMs, minSize, maxSize, limit}`; result `{searchId, topic, limit}`. `SearchModel` hides the actions when it is missing |
 | `cancelSearch(searchId)` | optional, `search.cancel`, no callback |
-| `searchEvent(data)` | signal carrying `{searchId, kind, entries, count, truncated, cancelled, unreadable}` with `kind` `results` (a batch to append) or `done` |
+| `searchEvent(data)` | signal carrying `{searchId, kind, entries, count, truncated, partial, cancelled, unreadable, backend, phase, depthLimit}` with `kind` `backend` (which backend serves the search), `results` (a batch of entries, each with a `score` the model sorts by) or `done` |
 | `list(path, options, cb)` | optional, `files.list` without a watch, same options; the path bar completes folder names from it |
 | `resolveLocation(text, cwd, cb)` | optional, `location.resolve`. Turns what was typed in the path bar into `{location: {kind, path, select, uri, password}}`, `kind` one of `folder` (navigate, or reveal `select`), `remote` and `servers` (handed to the host); errors carry `ENOENT`, `EACCES`, `EOTHERHOME` (`~name`), `EINVAL` or `NOTSUPPORTED`. Without it the path bar only takes absolute paths and `~` |
 | `preview(path, maxBytes, cb)` | optional, `files.preview`, `{text, binary, truncated, size, lines}`; the preview's text viewer reads up to `FileBrowserMetrics.previewBytes` |
