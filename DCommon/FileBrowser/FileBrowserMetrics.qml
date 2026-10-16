@@ -49,7 +49,7 @@ Singleton {
     readonly property real previewStripSmallWidth: Style.buttonHeightS
     readonly property real previewDrawerMinWidth: Style.sidebarWidth
     readonly property real previewViewMinWidth: Style.sidebarWidth
-    readonly property real previewDrawerRatio: 0.45
+    readonly property real previewDrawerRatio: 0.35
 
     readonly property real listRowHeight: Style.listItemHeight
     readonly property real listRowPadding: Style.spacingL
