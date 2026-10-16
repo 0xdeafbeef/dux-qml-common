@@ -43,6 +43,7 @@ Popup {
     x: I18n.isRtl ? (anchorItem?.width ?? 0) - width : 0
     y: (anchorItem?.height ?? 0) + Style.spacingXS
     width: Math.max(anchorItem?.width ?? 0, FileBrowserMetrics.suggestionMinWidth)
+    margins: 0
     padding: Style.spacingXS
     modal: false
     dim: false

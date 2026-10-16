@@ -31,6 +31,7 @@ FocusScope {
     property string renamingPath: ""
     property var cutSet: ({})
     property var childCounts: ({})
+    property var countsPending: ({})
     property bool singleClickActivates: false
     property bool typeAheadEnabled: true
     property string typeAheadMode: "jump"
@@ -371,15 +372,18 @@ FocusScope {
         if (!countFolders || viewMode !== "list" || !fittingColumns.includes("size"))
             return;
         const wanted = [];
-        for (let i = first; i <= Math.min(last, directory.count - 1); i++) {
+        for (let i = Math.max(0, first); i <= Math.min(last, directory.count - 1); i++) {
             const entry = entryAt(i);
-            if (!entry?.isDir || childCounts[entry.path] !== undefined)
+            if (!entry?.isDir || childCounts[entry.path] !== undefined || countsPending[entry.path])
                 continue;
             wanted.push(entry.path);
+            countsPending[entry.path] = true;
         }
         if (wanted.length === 0 || !directory.backend)
             return;
         directory.backend.count(wanted, showHidden, result => {
+            for (const path of wanted)
+                delete body.countsPending[path];
             if (result.error)
                 return;
             const merged = Object.assign({}, body.childCounts);
@@ -389,6 +393,14 @@ FocusScope {
             }
             body.childCounts = merged;
         });
+    }
+
+    function prefetchCounts() {
+        if (!view || columnsMode)
+            return;
+        const range = view.visibleRange();
+        const rows = range[1] - range[0] + 1;
+        requestCounts(range[0] - rows, range[1] + rows * FileBrowserMetrics.countPrefetchScreens);
     }
 
     function selectedBytes() {
@@ -416,7 +428,7 @@ FocusScope {
             return;
         const range = view.visibleRange();
         directory.requestThumbnails(range[0], range[1]);
-        requestCounts(range[0], range[1]);
+        prefetchCounts();
         if (range[1] >= directory.count - 1)
             directory.loadMore();
     }
@@ -435,6 +447,7 @@ FocusScope {
         selection.clear();
         renamingPath = "";
         childCounts = ({});
+        countsPending = ({});
         if (!columnsMode)
             scrollReset.restart();
         directoryReplaced();
@@ -459,6 +472,7 @@ FocusScope {
             body.selection.clear();
             body.renamingPath = "";
             body.childCounts = ({});
+            body.countsPending = ({});
             body.view?.positionViewAtBeginning();
         }
 
@@ -496,6 +510,13 @@ FocusScope {
 
         interval: FileBrowserMetrics.settleInterval
         onTriggered: body.settleNow()
+    }
+
+    Timer {
+        id: countSoon
+
+        interval: 0
+        onTriggered: body.prefetchCounts()
     }
 
     FrameAnimation {
@@ -677,7 +698,10 @@ FocusScope {
             onItemSpringLoaded: index => body.springLoad(index)
             onRenameSubmitted: (target, name) => body.finishRename(target, name)
             onRenameCancelled: body.finishRename("", "")
-            onContentYChanged: settle.restart()
+            onContentYChanged: {
+                settle.restart();
+                countSoon.restart();
+            }
             onCountChanged: settle.restart()
 
             ViewBackground {

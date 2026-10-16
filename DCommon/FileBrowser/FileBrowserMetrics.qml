@@ -109,6 +109,7 @@ Singleton {
     readonly property real pickerMinHeight: Style.smallBreakpoint
     readonly property real pickerScreenFraction: 0.9
     readonly property int settleInterval: 150
+    readonly property int countPrefetchScreens: 3
     readonly property int skeletonDelay: 150
     readonly property int typeAheadInterval: 1000
     readonly property int springLoadDelay: 700
