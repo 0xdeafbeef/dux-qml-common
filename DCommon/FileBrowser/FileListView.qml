@@ -37,7 +37,7 @@ DListView {
     signal renameCancelled
 
     function columnWidth(id) {
-        return storedWidths[id] ?? FileColumns.specFor(id)?.width ?? FileBrowserMetrics.columnMinWidth;
+        return FileColumns.widthFor(id, storedWidths);
     }
 
     function visibleRange() {

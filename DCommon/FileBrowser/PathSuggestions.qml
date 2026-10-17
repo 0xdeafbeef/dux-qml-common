@@ -4,7 +4,6 @@ import QtQuick
 import QtQuick.Controls
 import qs.DCommon.Common
 import qs.DCommon.Widgets
-import "PathCompletion.js" as PathCompletion
 
 Popup {
     id: root
@@ -52,8 +51,7 @@ Popup {
     onRowsChanged: {
         if (highlightIndex >= rows.length)
             highlightIndex = -1;
-        list.savedY = list.originY;
-        list.positionViewAtBeginning();
+        list.resetScroll();
     }
     onHighlightIndexChanged: {
         if (highlightIndex >= 0)
@@ -157,7 +155,7 @@ Popup {
                     anchors.verticalCenter: parent.verticalCenter
                     width: Math.min(implicitWidth, parent.width * FileBrowserMetrics.suggestionHintRatio)
                     visible: entry.modelData.hint !== ""
-                    text: PathCompletion.markup(entry.modelData.hint, entry.modelData.hintMarks, Style.primary)
+                    text: FileFormat.markRanges(entry.modelData.hint, entry.modelData.hintMarks, Style.primary)
                     textFormat: Text.StyledText
                     color: Style.surfaceVariantText
                     font.pixelSize: Style.fontSizeSmall
@@ -172,7 +170,7 @@ Popup {
                     anchors.right: entryHint.visible ? entryHint.left : parent.right
                     anchors.rightMargin: Style.spacingM
                     anchors.verticalCenter: parent.verticalCenter
-                    text: PathCompletion.markup(entry.modelData.name, entry.modelData.nameMarks, Style.primary)
+                    text: FileFormat.markRanges(entry.modelData.name, entry.modelData.nameMarks, Style.primary)
                     textFormat: Text.StyledText
                     color: Style.surfaceText
                     font.pixelSize: Style.fontSizeMedium

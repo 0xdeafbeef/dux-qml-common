@@ -23,16 +23,10 @@ StyledButton {
         return danger ? Style.error : Style.surfaceVariantText;
     }
 
-    signal entered
-
     width: parent?.width ?? 0
     implicitHeight: Style.menuItemHeight
     radius: Style.cornerRadiusS
     color: "transparent"
-    onHoveredChanged: {
-        if (hovered)
-            root.entered();
-    }
 
     StateLayer {
         control: root

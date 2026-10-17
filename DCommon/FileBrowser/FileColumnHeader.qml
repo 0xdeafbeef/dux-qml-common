@@ -20,7 +20,7 @@ Item {
     signal columnsMenuRequested(real pointX, real pointY)
 
     function columnWidth(id) {
-        return widths[id] ?? FileColumns.specFor(id)?.width ?? FileBrowserMetrics.columnMinWidth;
+        return FileColumns.widthFor(id, widths);
     }
 
     implicitHeight: FileBrowserMetrics.columnHeaderHeight

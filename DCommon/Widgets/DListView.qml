@@ -24,6 +24,11 @@ ListView {
         contentY = Reveal.contentYFor(listView, top, bottom, revealInsetTop, revealInsetBottom);
     }
 
+    function resetScroll() {
+        savedY = originY;
+        positionViewAtBeginning();
+    }
+
     function revealIndex(index) {
         positionViewAtIndex(index, ListView.Contain);
         const item = itemAtIndex(index);

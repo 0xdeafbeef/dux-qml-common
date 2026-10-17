@@ -18,7 +18,6 @@ FloatingWindow {
     property var backend: Host.files
 
     property string browserTitle: I18n.tr("Select File", "default file browser window title")
-    property string browserIcon: "folder_open" // !TODO: plugin compat, the window header no longer draws an icon
     property string browserType: "generic"
     property var fileExtensions: []
     property alias filterExtensions: modal.fileExtensions
@@ -33,7 +32,6 @@ FloatingWindow {
     property bool shouldHaveFocus: visible
     property bool allowFocusOverride: false
     property bool shouldBeVisible: visible
-    property bool allowStacking: true
 
     readonly property var _screen: screen ?? (Quickshell.screens.length > 0 ? Quickshell.screens[0] : null)
     readonly property int screenWidth: _screen?.width ?? 1920

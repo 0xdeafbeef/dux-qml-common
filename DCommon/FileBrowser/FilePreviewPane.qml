@@ -44,11 +44,19 @@ Item {
             replaced[row.id] = row;
         const head = ["type", "size"];
         const tail = ["modified", "created", "owner", "permissions"];
-        const make = id => replaced[id] ?? (entry ? {
-                    "id": id,
-                    "label": FileColumns.label(id),
-                    "value": FileColumns.value(id, entry)
-                } : null);
+        const make = id => {
+            if (replaced[id])
+                return replaced[id];
+            if (!entry)
+                return null;
+            const value = FileColumns.value(id, entry);
+            const pending = id === "size" && entry.isDir && value === "";
+            return {
+                "id": id,
+                "label": FileColumns.label(id),
+                "value": pending ? "…" : value
+            };
+        };
         const middle = extra.filter(row => !head.includes(row.id) && !tail.includes(row.id));
         return head.map(make).concat(middle, tail.map(make)).filter(row => row && row.value !== "");
     }

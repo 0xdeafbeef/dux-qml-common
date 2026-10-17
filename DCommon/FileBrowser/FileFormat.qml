@@ -93,15 +93,23 @@ Singleton {
         return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
     }
 
-    // Marks the first case-insensitive hit of needle for Text.StyledText.
     function highlight(text, needle, color) {
         if (needle === "")
             return text;
         const at = text.toLowerCase().indexOf(needle.toLowerCase());
         if (at < 0)
             return escapeMarkup(text);
-        const end = at + needle.length;
-        return escapeMarkup(text.substring(0, at)) + `<font color="${color}"><b>` + escapeMarkup(text.substring(at, end)) + "</b></font>" + escapeMarkup(text.substring(end));
+        return markRanges(text, [[at, at + needle.length]], color);
+    }
+
+    function markRanges(text, marks, color) {
+        let out = "";
+        let at = 0;
+        for (const mark of marks) {
+            out += escapeMarkup(text.substring(at, mark[0])) + `<font color="${color}"><b>` + escapeMarkup(text.substring(mark[0], mark[1])) + "</b></font>";
+            at = mark[1];
+        }
+        return out + escapeMarkup(text.substring(at));
     }
 
     function stemLength(name, isDir) {

@@ -68,7 +68,7 @@ FocusScope {
     readonly property var directory: pool.active ?? pool.empty
     readonly property alias body: viewBody
     readonly property var currentEntry: viewBody.cursorEntry()
-    readonly property var selectedEntries: viewBody.selectedEntries()
+    readonly property var selectedEntries: viewBody.selected
 
     property var _pendingReveal: []
     property bool _revealStarted: false
@@ -201,13 +201,6 @@ FocusScope {
         history.marker = marker();
     }
 
-    function _applyPendingScroll() {
-        if (!restoreScroll.armed || root.directory.loading)
-            return;
-        restoreScroll.armed = false;
-        viewBody.scrollTo(restoreScroll.pending);
-    }
-
     function _applyPendingReveal() {
         if (_pendingReveal.length === 0)
             return;
@@ -259,7 +252,6 @@ FocusScope {
 
         function onListed() {
             root._applyPendingReveal();
-            root._applyPendingScroll();
         }
 
         function onEntriesAdded() {
@@ -280,20 +272,8 @@ FocusScope {
                 return;
             if (saved.cursor)
                 selectionModel.select(saved.cursor);
-            restoreScroll.pending = saved.contentY ?? 0;
-            restoreScroll.armed = true;
-            restoreScroll.restart();
+            viewBody.restoreScroll(saved.contentY ?? 0);
         }
-    }
-
-    Timer {
-        id: restoreScroll
-
-        property real pending: 0
-        property bool armed: false
-
-        interval: 0
-        onTriggered: root._applyPendingScroll()
     }
 
     FileBrowserSidebar {

@@ -93,12 +93,15 @@ Singleton {
         }
     }
 
-    function value(id, entry) {
+    function value(id, entry, childCount) {
         switch (id) {
         case "size":
-            if (!entry.isDir)
-                return FileFormat.size(entry.size);
-            return entry.childCount >= 0 ? FileFormat.count(entry.childCount) : "";
+            {
+                if (!entry.isDir)
+                    return FileFormat.size(entry.size);
+                const count = childCount ?? entry.childCount ?? -1;
+                return count >= 0 ? FileFormat.count(count) : "";
+            }
         case "modified":
             return FileFormat.modified(entry.mtimeMs);
         case "type":
@@ -126,5 +129,9 @@ Singleton {
 
     function sortKeyFor(id) {
         return specFor(id)?.sortKey ?? "";
+    }
+
+    function widthFor(id, widths) {
+        return widths[id] ?? specFor(id)?.width ?? FileBrowserMetrics.columnMinWidth;
     }
 }

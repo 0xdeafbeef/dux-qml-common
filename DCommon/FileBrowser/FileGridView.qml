@@ -32,6 +32,10 @@ DGridView {
     signal renameSubmitted(string path, string name)
     signal renameCancelled
 
+    function resetScroll() {
+        positionViewAtBeginning();
+    }
+
     function visibleRange() {
         const first = Math.floor((contentY - contentOrigin) / cellHeight) * columnsPerRow;
         const last = Math.floor((contentY - contentOrigin + height) / cellHeight) * columnsPerRow + columnsPerRow - 1;

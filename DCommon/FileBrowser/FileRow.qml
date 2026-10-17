@@ -26,6 +26,7 @@ FileItemSurface {
     required property var model
 
     readonly property string highlight: view?.nameHighlight ?? ""
+    readonly property int childCount: view?.childCounts?.[path] ?? -1
     readonly property var entry: ({
             "path": path,
             "isDir": isDir,
@@ -37,7 +38,6 @@ FileItemSurface {
             "ctimeMs": ctimeMs,
             "owner": owner,
             "mode": mode,
-            "childCount": view?.childCounts?.[path] ?? -1,
             "originalPath": model.originalPath ?? "",
             "deletedMs": model.deletedMs ?? 0
         })
@@ -89,7 +89,7 @@ FileItemSurface {
 
                 width: row.view.columnWidth(modelData)
                 horizontalAlignment: FileColumns.specFor(modelData)?.align ?? Text.AlignLeft
-                text: FileColumns.value(modelData, row.entry)
+                text: FileColumns.value(modelData, row.entry, row.childCount)
                 color: row.supportingColor
                 font.pixelSize: Style.fontSizeSmall
                 elide: Text.ElideRight

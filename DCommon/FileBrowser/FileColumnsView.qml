@@ -17,7 +17,7 @@ Item {
     readonly property var ancestors: Layout.chainFor(activePath, body.homePath, FilePaths.parentOf)
     readonly property var chain: ancestors.concat([activePath])
     readonly property int activeDepth: ancestors.length
-    readonly property var picked: body.selectedEntries()
+    readonly property var picked: body.selected
     readonly property var pickedEntry: picked.length === 1 ? picked[0] : null
     readonly property string lookaheadPath: pickedEntry?.isDir ? pickedEntry.path : ""
     readonly property bool trailingPane: picked.length > 1 || (pickedEntry !== null && !pickedEntry.isDir)
@@ -483,7 +483,11 @@ Item {
                     if (column.active)
                         columns.body.startDrag(index);
                 }
-                onItemDropped: (index, drop) => columns.body.itemsDropped(column.entryAt(index).path, drop)
+                onItemDropped: (index, drop) => {
+                    const entry = column.entryAt(index);
+                    if (entry)
+                        columns.body.itemsDropped(entry.path, drop);
+                }
                 onItemSpringLoaded: index => {
                     const entry = column.entryAt(index);
                     if (entry?.isDir)

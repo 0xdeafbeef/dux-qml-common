@@ -43,7 +43,9 @@ FocusScope {
     property bool previewKeys: false
     property var directoryPool: null
     property bool slowListing: false
+    property var selected: []
     property real _lastActivation: 0
+    property real _pendingScroll: -1
 
     readonly property var view: viewLoader.item
     readonly property bool columnsMode: viewMode === "columns" && directoryPool !== null
@@ -51,7 +53,7 @@ FocusScope {
     readonly property int zoom: viewMode === "grid" ? gridZoom : listZoom
     readonly property var iconSizes: FileBrowserMetrics.iconSizesFor(viewMode)
     readonly property real iconSize: iconSizes[Math.max(0, Math.min(iconSizes.length - 1, zoom))]
-    readonly property var fittingColumns: {
+    readonly property string fittingKey: {
         let available = width - iconSize - FileBrowserMetrics.listRowPadding * 3 - FileBrowserMetrics.nameColumnMinWidth;
         const kept = [];
         for (const id of listColumns) {
@@ -61,8 +63,9 @@ FocusScope {
             available -= needed;
             kept.push(id);
         }
-        return kept;
+        return kept.join(",");
     }
+    readonly property var fittingColumns: fittingKey === "" ? [] : fittingKey.split(",")
     readonly property bool listing: directory.loading && directory.count === 0
     readonly property bool empty: !directory.loading && directory.error === "" && directory.count === 0
     readonly property var dragScrollTarget: dragScrollTargetFor(FileDragHover.area)
@@ -134,11 +137,18 @@ FocusScope {
     }
 
     function selectedEntries() {
-        if (selection.count === 0)
-            return [];
+        return selected;
+    }
+
+    function _refreshSelected() {
+        if (selection.count === 0) {
+            selected = [];
+            return;
+        }
         if (selection.count === 1) {
             const entry = entryAt(directory.indexOfPath(selection.paths[0]));
-            return entry ? [entry] : [];
+            selected = entry ? [entry] : [];
+            return;
         }
         const found = new Map();
         for (let i = 0; i < directory.count; i++) {
@@ -146,7 +156,14 @@ FocusScope {
             if (selection.contains(entry.path))
                 found.set(entry.path, entry);
         }
-        return selection.paths.map(selected => found.get(selected)).filter(entry => entry !== undefined);
+        selected = selection.paths.map(path => found.get(path)).filter(entry => entry !== undefined);
+    }
+
+    function _syncEntries() {
+        selection.prune(directory.entries);
+        if (renamingPath !== "" && directory.indexOfPath(renamingPath) < 0)
+            renamingPath = "";
+        _refreshSelected();
     }
 
     function beginRename(target) {
@@ -160,18 +177,54 @@ FocusScope {
             renameRequested(target, name);
     }
 
+    function scrollTarget() {
+        return columnsMode ? view?.activeList ?? null : view;
+    }
+
     function scrollOffset() {
-        const target = view?.activeList ?? view;
+        const target = scrollTarget();
         return target ? target.contentY - target.originY : 0;
     }
 
     function scrollTo(offset) {
-        const target = view?.activeList ?? view;
+        const target = scrollTarget();
         if (!target)
             return;
-        if (typeof target.forceLayout === "function")
-            target.forceLayout();
+        target.forceLayout();
         target.contentY = target.originY + Math.max(0, Math.min(offset, target.contentHeight - target.height));
+    }
+
+    function restoreScroll(offset) {
+        _pendingScroll = Math.max(0, offset);
+        scrollSettle.restart();
+    }
+
+    function resetScroll() {
+        if (columnsMode)
+            return;
+        view?.resetScroll();
+    }
+
+    function _applyPendingScroll() {
+        if (_pendingScroll < 0 || directory.loading)
+            return;
+        const offset = _pendingScroll;
+        _pendingScroll = -1;
+        scrollTo(offset);
+    }
+
+    function _settleScroll() {
+        if (_pendingScroll >= 0) {
+            _applyPendingScroll();
+            return;
+        }
+        resetScroll();
+    }
+
+    function dropOn(index, drop) {
+        const entry = entryAt(index);
+        if (entry)
+            itemsDropped(entry.path, drop);
     }
 
     function enterCursor() {
@@ -405,7 +458,7 @@ FocusScope {
 
     function selectedBytes() {
         let total = 0;
-        for (const entry of selectedEntries()) {
+        for (const entry of selected) {
             if (entry.size < 0)
                 return -1;
             total += entry.size;
@@ -434,22 +487,13 @@ FocusScope {
     }
 
     onViewModeChanged: renamingPath = ""
-    function resetScroll() {
-        const target = view?.activeList ?? view;
-        if (!target || columnsMode)
-            return;
-        if (target.savedY !== undefined)
-            target.savedY = target.originY;
-        target.positionViewAtBeginning();
-    }
-
     onDirectoryChanged: {
         selection.clear();
         renamingPath = "";
         childCounts = ({});
         countsPending = ({});
-        if (!columnsMode)
-            scrollReset.restart();
+        _pendingScroll = -1;
+        scrollSettle.restart();
         directoryReplaced();
     }
     onListingChanged: {
@@ -467,6 +511,7 @@ FocusScope {
 
     Connections {
         target: body.directory
+        ignoreUnknownSignals: true
 
         function onPathReset() {
             body.selection.clear();
@@ -477,16 +522,33 @@ FocusScope {
         }
 
         function onListed() {
-            body.selection.prune(body.directory.entries);
+            body._syncEntries();
+            body._applyPendingScroll();
             body.settleNow();
+        }
+
+        function onEntriesAdded() {
+            body._refreshSelected();
+        }
+
+        function onEntriesRemoved() {
+            body._syncEntries();
+        }
+    }
+
+    Connections {
+        target: body.selection
+
+        function onPathsChanged() {
+            body._refreshSelected();
         }
     }
 
     Timer {
-        id: scrollReset
+        id: scrollSettle
 
         interval: 0
-        onTriggered: body.resetScroll()
+        onTriggered: body._settleScroll()
     }
 
     Timer {
@@ -512,24 +574,10 @@ FocusScope {
         onTriggered: body.settleNow()
     }
 
-    Timer {
-        id: countSoon
-
-        interval: 0
-        onTriggered: body.prefetchCounts()
-    }
-
-    FrameAnimation {
-        running: body.dragScrollTarget !== null && body.dragScrollDirection !== 0
-        onTriggered: {
-            const target = body.dragScrollTarget;
-            const maximum = target.originY + Math.max(0, target.contentHeight - target.height);
-            const next = Math.max(target.originY, Math.min(maximum, target.contentY + body.dragScrollDirection * FileBrowserMetrics.listRowHeight * FileBrowserMetrics.dragScrollRowsPerSecond * frameTime));
-            if (next === target.contentY)
-                return;
-            target.contentY = next;
-            FileDragHover.scrolled = true;
-        }
+    ViewAutoScroll {
+        target: body.dragScrollTarget
+        direction: body.dragScrollDirection
+        onScrolled: FileDragHover.scrolled = true
     }
 
     Keys.onPressed: event => handleKey(event)
@@ -638,7 +686,6 @@ FocusScope {
             break;
         case Qt.Key_Slash:
         case Qt.Key_Question:
-            // Left to the host: search and help, never a name prefix.
             return;
         default:
             if (!typeAheadEnabled || (modifiers !== Qt.NoModifier && modifiers !== Qt.ShiftModifier))
@@ -694,14 +741,11 @@ FocusScope {
             onItemMiddleClicked: index => body.middleClick(index)
             onItemContextMenu: (index, pointX, pointY, modifiers) => body.forwardItemMenu(listView, index, pointX, pointY, modifiers)
             onItemDragStarted: index => body.startDrag(index)
-            onItemDropped: (index, drop) => body.itemsDropped(body.entryAt(index).path, drop)
+            onItemDropped: (index, drop) => body.dropOn(index, drop)
             onItemSpringLoaded: index => body.springLoad(index)
             onRenameSubmitted: (target, name) => body.finishRename(target, name)
             onRenameCancelled: body.finishRename("", "")
-            onContentYChanged: {
-                settle.restart();
-                countSoon.restart();
-            }
+            onContentYChanged: settle.restart()
             onCountChanged: settle.restart()
 
             ViewBackground {
@@ -740,7 +784,7 @@ FocusScope {
             onItemMiddleClicked: index => body.middleClick(index)
             onItemContextMenu: (index, pointX, pointY, modifiers) => body.forwardItemMenu(gridView, index, pointX, pointY, modifiers)
             onItemDragStarted: index => body.startDrag(index)
-            onItemDropped: (index, drop) => body.itemsDropped(body.entryAt(index).path, drop)
+            onItemDropped: (index, drop) => body.dropOn(index, drop)
             onItemSpringLoaded: index => body.springLoad(index)
             onRenameSubmitted: (target, name) => body.finishRename(target, name)
             onRenameCancelled: body.finishRename("", "")

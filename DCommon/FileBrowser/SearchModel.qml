@@ -3,9 +3,6 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import qs.DCommon.Common
 
-// A results list with the DirectoryModel surface FileViewBody reads, fed by
-// Host.files.search instead of a watch. Batches arrive scored; rows are
-// inserted in sort order, relevance by default.
 QtObject {
     id: root
 
@@ -37,9 +34,7 @@ QtObject {
     readonly property bool available: backend?.connected === true && typeof backend?.search === "function"
     readonly property ListModel entries: ListModel {}
     readonly property int count: entries.count
-    readonly property bool hasMore: false
     readonly property bool pollOnFocus: false
-    readonly property string watchId: ""
 
     property int _firstVisible: -1
     property int _lastVisible: -1
@@ -51,8 +46,13 @@ QtObject {
 
     signal listed
     signal pathReset
-    signal gone
     signal finished
+
+    readonly property ThumbnailRequests _thumbnails: ThumbnailRequests {
+        backend: root.backend
+        size: root.thumbnailSize
+        sizeLimit: root.thumbnailSizeLimit
+    }
 
     readonly property Connections _backendLink: Connections {
         target: root.backend
@@ -145,10 +145,6 @@ QtObject {
     function loadMore() {
     }
 
-    function indexOfName(name) {
-        return _rows.findIndex(row => row.name === name);
-    }
-
     function indexOfPath(target) {
         const row = _byPath.get(target);
         return row ? _position(row) : -1;
@@ -177,21 +173,11 @@ QtObject {
         _lastVisible = last;
         const paths = [];
         for (let i = first; i <= Math.min(last, _rows.length - 1); i++) {
-            const entry = _rows[i];
-            if (!entry.thumbnailable || entry.thumbnail !== "")
-                continue;
-            if (thumbnailSizeLimit >= 0 && entry.size > thumbnailSizeLimit)
-                continue;
-            paths.push(entry.path);
+            if (_thumbnails.wanted(_rows[i]))
+                paths.push(_rows[i].path);
         }
-        if (paths.length === 0)
-            return;
-        backend.thumbnails(paths, thumbnailSize, "", result => {
-            if (result.error)
-                return;
-            for (const item of result.results || []) {
-                if (!item.thumbnail)
-                    continue;
+        _thumbnails.request(paths, "", items => {
+            for (const item of items) {
                 const index = indexOfPath(item.path);
                 if (index < 0)
                     continue;
@@ -202,6 +188,7 @@ QtObject {
     }
 
     function _reset() {
+        _thumbnails.reset();
         entries.clear();
         _rows = [];
         _byPath = new Map();
