@@ -76,8 +76,9 @@ QtObject {
     }
 
     function repageAll() {
+        _sweepModels();
         for (const path in _models)
-            _models[path].repage();
+            _models[path].repageIfChanged();
     }
 
     function _sync() {

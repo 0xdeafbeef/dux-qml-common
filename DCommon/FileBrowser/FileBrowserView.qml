@@ -93,6 +93,7 @@ FocusScope {
     signal locationCancelled
     signal filterRequested(string text)
     signal filterFocusRequested
+    signal navigating(string target)
 
     function navigate(target) {
         _pendingReveal = [];
@@ -273,6 +274,7 @@ FocusScope {
     NavigationHistory {
         id: history
 
+        onEntering: target => root.navigating(target)
         onRestored: saved => {
             if (!saved)
                 return;

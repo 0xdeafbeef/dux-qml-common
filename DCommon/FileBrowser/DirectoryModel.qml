@@ -41,6 +41,7 @@ QtObject {
     property int _firstVisible: -1
     property int _lastVisible: -1
     property string _loadedPath: ""
+    property string _requested: ""
     property bool _awaiting: false
     property var _buffered: []
     property var _watchToken: null
@@ -78,6 +79,7 @@ QtObject {
 
     function reload() {
         _release();
+        _requested = "";
         loading = false;
         if (path !== _loadedPath) {
             _loadedPath = path;
@@ -98,6 +100,7 @@ QtObject {
         const token = _token();
         const service = backend;
         _watchToken = token;
+        _requested = JSON.stringify(_options());
         loading = true;
         _await();
         service.watch(path, _options(), result => {
@@ -287,7 +290,14 @@ QtObject {
         return false;
     }
 
+    function repageIfChanged() {
+        if (JSON.stringify(_options()) === _requested)
+            return;
+        repage();
+    }
+
     function repage() {
+        _requested = JSON.stringify(_options());
         if (watchId === "") {
             reload();
             return;
