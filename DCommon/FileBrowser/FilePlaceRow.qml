@@ -12,6 +12,7 @@ StyledButton {
     property string subtitle: ""
     property string tooltipText: ""
     property string iconName: ""
+    property string glyph: ""
     property string actionIcon: ""
     property string actionTooltip: ""
     property real ringValue: -1
@@ -100,6 +101,7 @@ StyledButton {
                     anchors.centerIn: parent
                     visible: !row.busy && !row.showAction
                     iconName: row.iconName
+                    glyph: row.glyph
                     size: FileBrowserMetrics.sidebarGlyphSize
                     color: Style.primary
                 }

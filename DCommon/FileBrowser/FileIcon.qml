@@ -8,12 +8,13 @@ Item {
     id: root
 
     property string iconName: ""
+    property string glyph: ""
     property string thumbnail: ""
     property int size: Style.iconSize
     property color color: Style.surfaceText
     property bool asynchronous: true
 
-    readonly property string themeIconPath: Paths.resolveIconPath(iconName)
+    readonly property string themeIconPath: glyph !== "" ? "" : Paths.resolveIconPath(iconName)
     readonly property real devicePixelRatio: Window.window?.devicePixelRatio ?? Screen.devicePixelRatio
     readonly property int rasterSize: Style.iconRasterSize(size * devicePixelRatio)
 
@@ -96,7 +97,7 @@ Item {
         anchors.centerIn: parent
         active: root.thumbnail === "" && root.themeIconPath === ""
         sourceComponent: DIcon {
-            name: root.glyphFor(root.iconName)
+            name: root.glyph !== "" ? root.glyph : root.glyphFor(root.iconName)
             size: root.size
             color: root.color
         }

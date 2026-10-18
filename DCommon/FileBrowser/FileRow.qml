@@ -39,7 +39,8 @@ FileItemSurface {
             "owner": owner,
             "mode": mode,
             "originalPath": model.originalPath ?? "",
-            "deletedMs": model.deletedMs ?? 0
+            "deletedMs": model.deletedMs ?? 0,
+            "usedMs": model.usedMs ?? 0
         })
 
     hitTargets: [visual, nameLabel, chevron].concat(Array.from(columns.children))

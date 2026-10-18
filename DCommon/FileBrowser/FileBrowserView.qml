@@ -45,7 +45,7 @@ FocusScope {
     property real thumbnailSizeLimit: -1
     property bool networkThumbnails: true
     property var folderJump: null
-    property string unlistedPath: ""
+    property var unlistedPaths: []
     property color paneColor: "transparent"
     property color chipColor: Style.chipSurface
     property real paneRadius: FileBrowserMetrics.paneRadius
@@ -231,7 +231,7 @@ FocusScope {
         id: pool
 
         backend: root.backend
-        activePath: root.path === root.unlistedPath ? "" : root.path
+        activePath: root.unlistedPaths.includes(root.path) ? "" : root.path
         includeHidden: root.showHidden
         filters: root.filters
         sortKey: root.sortKey
