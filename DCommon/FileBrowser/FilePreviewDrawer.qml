@@ -209,7 +209,7 @@ Item {
 
                 StyledText {
                     width: parent.width
-                    visible: !drawer.body.directory.loading
+                    opacity: drawer.body.directory.loading ? 0 : 1
                     text: FileFormat.count(drawer.body.directory.total)
                     color: Style.surfaceVariantText
                     font.pixelSize: Style.fontSizeMedium
