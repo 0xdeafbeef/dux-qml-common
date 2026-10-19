@@ -3,6 +3,7 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import qs.DCommon.Common
 import qs.DCommon.Widgets
+import "TypeAhead.js" as TypeAhead
 
 FocusScope {
     id: body
@@ -370,30 +371,20 @@ FocusScope {
         return Math.max(1, Math.floor(view.height / view.rowPitch));
     }
 
-    function typeAheadTarget(count, nameAt, current, prefix, text) {
-        const repeated = prefix !== "" && Array.from(prefix).every(letter => letter === text);
-        const needle = repeated ? text : prefix + text;
-        const start = repeated && current >= 0 ? current + 1 : 0;
-        for (let step = 0; step < count; step++) {
-            const index = (start + step) % count;
-            if (nameAt(index).toLowerCase().startsWith(needle))
-                return index;
-        }
-        return -1;
-    }
-
     function typeAhead(text) {
         if (typeAheadMode === "filter") {
             typeAheadTimer.prefix = "";
             filterRequested(text);
             return;
         }
-        const letter = text.toLowerCase();
-        const target = typeAheadTarget(directory.count, index => directory.entries.get(index).name, cursorIndex(), typeAheadTimer.prefix, letter);
-        typeAheadTimer.prefix += letter;
+        const match = TypeAhead.next(directory.count, index => directory.entries.get(index).name, cursorIndex(), typeAheadTimer.prefix, text);
+        typeAheadTimer.prefix = match.prefix;
+        if (match.index < 0) {
+            typeAheadTimer.stop();
+            return;
+        }
         typeAheadTimer.restart();
-        if (target >= 0)
-            jumpTo(target, Qt.NoModifier);
+        jumpTo(match.index, Qt.NoModifier);
     }
 
     function springLoad(index) {
@@ -490,6 +481,7 @@ FocusScope {
     onDirectoryChanged: {
         selection.clear();
         renamingPath = "";
+        typeAheadTimer.prefix = "";
         childCounts = ({});
         countsPending = ({});
         _pendingScroll = -1;
@@ -516,6 +508,7 @@ FocusScope {
         function onPathReset() {
             body.selection.clear();
             body.renamingPath = "";
+            typeAheadTimer.prefix = "";
             body.childCounts = ({});
             body.countsPending = ({});
             body.view?.positionViewAtBeginning();
