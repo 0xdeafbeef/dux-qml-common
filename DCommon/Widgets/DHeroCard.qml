@@ -1,5 +1,6 @@
 import QtQuick
 import qs.DCommon.Common
+import "../Common/Contrast.js" as Contrast
 
 DShapeHero {
     id: root
@@ -19,6 +20,7 @@ DShapeHero {
     readonly property real lockupScale: Math.min(1, availableWidth / Math.max(1, (hasElement ? lockupBaseSize * 1.6 + Style.spacingXS : 0) + headlineMetrics.width))
     readonly property real lockupSize: lockupBaseSize * lockupScale
     readonly property real tileSize: lockupSize * 1.6
+    readonly property color onPrimaryColor: Contrast.readableOn(Style.primary, [Style.onPrimary, Style.surface, Style.surfaceText, Qt.rgba(1, 1, 1, 1), Qt.rgba(0, 0, 0, 1)])
 
     width: parent?.width ?? 0
     accentSize: tileSize
@@ -51,7 +53,7 @@ DShapeHero {
                 text: root.atomicNumber
                 font.pixelSize: tile.width * 0.15
                 font.weight: Style.fontWeightMedium
-                color: Style.onPrimary
+                color: root.onPrimaryColor
             }
 
             StyledText {
@@ -63,7 +65,7 @@ DShapeHero {
                 text: root.symbol
                 font.pixelSize: root.lockupSize
                 font.weight: Style.fontWeightBold
-                color: Style.onPrimary
+                color: root.onPrimaryColor
             }
 
             StyledText {
@@ -72,7 +74,7 @@ DShapeHero {
                 anchors.bottomMargin: tile.width * 0.05
                 text: root.atomicMass
                 font.pixelSize: tile.width * 0.11
-                color: Style.onPrimary
+                color: root.onPrimaryColor
             }
         }
 
@@ -81,7 +83,7 @@ DShapeHero {
             text: root.headline
             font.pixelSize: root.lockupSize
             font.weight: Style.fontWeightBold
-            color: Style.onPrimaryContainer
+            color: root.contentColor
         }
     }
 
@@ -100,7 +102,7 @@ DShapeHero {
             text: root.badge
             font.pixelSize: Style.fontSizeMedium
             font.weight: Style.fontWeightBold
-            color: Style.onPrimary
+            color: root.onPrimaryColor
             elide: Text.ElideRight
         }
     }
