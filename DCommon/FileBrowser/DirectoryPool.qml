@@ -51,9 +51,9 @@ QtObject {
         const existing = _models[path];
         if (existing)
             return existing;
-        const created = _modelComponent.createObject(pool, {
-            "path": path
-        });
+        // path after creation, or reload runs before the backend binding exists
+        const created = _modelComponent.createObject(pool);
+        created.path = path;
         const next = Object.assign({}, _models);
         next[path] = created;
         _models = next;
