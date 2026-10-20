@@ -1,6 +1,6 @@
 # dank-qml-common
 
-Shared QML for DMS, Dank Calendar, Dux Files and the rest of the Dank Linux suite. Widgets, theming, a file browser and lock screen pieces, all following Material 3 Expressive.
+Shared QML for DMS, Dux Calendar, Dux Files and the rest of the Dux Labs suite. Widgets, theming, a file browser and lock screen pieces, all following Material 3 Expressive.
 
 ```qml
 import qs.DCommon.Widgets
@@ -14,7 +14,7 @@ import qs.DCommon.Session
 - **Widgets** (`DCommon/Widgets`): buttons, FABs, split buttons, button groups, toggles, sliders, chips, badges, tabs, dropdowns, text fields, steppers, tooltips, dialogs, bottom sheets, window headers, navigation bars and rails, cards, list rows, reorderable lists, carousels, color pickers, sparklines, ring gauges, clocks, a month grid, a time picker, Material shapes and the loading indicator. `DFlickable`, `DListView` and `DGridView` wrap the Qt views with our scrollbars and wheel handling.
 - **Common** (`DCommon/Common`): `Style` (every theme token, with fallbacks), `Fonts` (bundled faces), `I18n`, `Paths`, `Log` and `Host` bridges, plus JS helpers for contrast, tonal colors, accents, HCT, shapes and wheel input.
 - **FileBrowser** (`DCommon/FileBrowser`): the browser behind Dux Files and the DMS file picker. `FilePicker` is the dialog, `FileBrowserView` is the browser without dialog behavior, and the parts (list, grid and column views, path bar, preview pane, selection, history) work on their own too.
-- **Session** (`DCommon/Session`): the power menu and on-screen keyboard shared by the DMS lock screen and [dms-greeter](https://github.com/AvengeMedia/dank-greeter).
+- **Session** (`DCommon/Session`): the power menu and on-screen keyboard shared by the DMS lock screen and [dms-greeter](https://github.com/duxlabs-dev/dux-greeter).
 
 [SHAPES.md](SHAPES.md) covers corner radius strength and the shape scale.
 
@@ -23,7 +23,7 @@ import qs.DCommon.Session
 Add it as a submodule and symlink it into the quickshell config:
 
 ```sh
-git submodule add https://github.com/AvengeMedia/dank-qml-common.git dank-qml-common
+git submodule add https://github.com/duxlabs-dev/dux-qml-common.git dank-qml-common
 ln -s ../dank-qml-common/DCommon quickshell/DCommon
 ```
 
