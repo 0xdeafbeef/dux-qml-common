@@ -87,7 +87,7 @@ StyledButton {
 
             Rectangle {
                 anchors.fill: parent
-                radius: Style.fullRadius(width, height)
+                radius: row.ringValue >= 0 ? width / 2 : Style.fullRadius(width, height)
                 color: row.showAction ? Style.primaryContainer : Style.withAlpha(Style.primary, Style.tonalTintAlpha)
 
                 DSpinner {
