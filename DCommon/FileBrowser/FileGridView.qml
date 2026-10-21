@@ -36,6 +36,23 @@ DGridView {
         positionViewAtBeginning();
     }
 
+    function fitName(name, isDir) {
+        const stem = FileFormat.stemLength(name, isDir);
+        if (stem >= name.length)
+            return name;
+        labelProbe.text = name;
+        if (labelProbe.positionAt(0, labelLineHeight * 2.5) >= name.length)
+            return name;
+        const second = labelProbe.positionAt(0, labelLineHeight * 1.5);
+        if (second <= 0 || second > stem)
+            return name;
+        const ext = name.substring(stem);
+        const room = labelProbe.width - labelMetrics.advanceWidth(ext);
+        if (room <= labelMetrics.advanceWidth("…"))
+            return name;
+        return name.substring(0, second) + labelMetrics.elidedText(name.substring(second, stem), Qt.ElideRight, room) + ext;
+    }
+
     function visibleRange() {
         const first = Math.floor((contentY - contentOrigin) / cellHeight) * columnsPerRow;
         const last = Math.floor((contentY - contentOrigin + height) / cellHeight) * columnsPerRow + columnsPerRow - 1;
@@ -84,6 +101,16 @@ DGridView {
         font.family: Style.fontFor("ui")
         font.weight: Style.fontWeightFor("ui")
         font.pixelSize: Style.fontSizeSmall
+    }
+
+    TextEdit {
+        id: labelProbe
+
+        visible: false
+        readOnly: true
+        width: grid.cellWidth - FileBrowserMetrics.gridGap - FileBrowserMetrics.gridTilePadding * 2
+        font: labelMetrics.font
+        wrapMode: Text.Wrap
     }
 
     delegate: FileTile {

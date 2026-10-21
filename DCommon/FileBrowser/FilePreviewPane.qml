@@ -251,14 +251,14 @@ Item {
 
                 StyledText {
                     width: parent.width
-                    text: pane.entry?.name ?? ""
+                    text: pane.entry ? FileFormat.shownName("", pane.entry.name, pane.entry.isDir ?? false) : ""
                     color: Style.surfaceText
                     font.pixelSize: Style.fontSizeLarge
                     font.weight: Style.fontWeightMedium
                     horizontalAlignment: Text.AlignHCenter
                     wrapMode: Text.WrapAnywhere
                     maximumLineCount: 3
-                    elide: Text.ElideMiddle
+                    elide: Text.ElideRight
                 }
 
                 StyledText {

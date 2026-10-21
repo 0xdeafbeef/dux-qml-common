@@ -122,6 +122,14 @@ Singleton {
         return dot > 0 ? dot : name.length;
     }
 
+    function shownName(displayName, name, isDir) {
+        if (displayName !== "")
+            return displayName;
+        if (FileBrowserSettings.showExtensions)
+            return name;
+        return name.substring(0, stemLength(name, isDir));
+    }
+
     function validName(name) {
         const trimmed = name.trim();
         return trimmed !== "" && trimmed !== "." && trimmed !== ".." && !trimmed.includes("/");
