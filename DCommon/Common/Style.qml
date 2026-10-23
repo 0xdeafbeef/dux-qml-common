@@ -244,6 +244,7 @@ Singleton {
         return root["cornerRadius" + token.toUpperCase()];
     }
 
+    readonly property int densityLevel: theme?.densityLevel ?? 0
     readonly property real groupedListGap: theme?.groupedListGap ?? spacingXXS
     readonly property real groupedListInnerRadius: theme?.groupedListInnerRadius ?? cornerRadiusXS
     readonly property real groupedListOuterRadius: theme?.groupedListOuterRadius ?? cornerRadiusL

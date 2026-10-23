@@ -6,10 +6,14 @@ import Quickshell
 import qs.DCommon.Common
 
 Singleton {
+    readonly property int densityLevel: Style.densityLevel
+    readonly property real densityStepS: densityLevel * Style.spacingXS
+    readonly property real densityStepM: densityLevel * Style.spacingS
+
     readonly property real headerHeight: Style.buttonHeightS
     readonly property real contentMargin: Style.windowInset
     readonly property real contentSpacing: Style.spacingM
-    readonly property real controlSize: Style.buttonHeightS
+    readonly property real controlSize: Style.buttonHeightS + densityStepS
     readonly property real controlSpacing: Style.spacingS
     readonly property real navPairSegmentWidth: controlSize + Style.spacingS
     readonly property real navPairInnerRadius: Style.cornerRadiusS
@@ -27,7 +31,7 @@ Singleton {
     readonly property int defaultGridZoom: 2
     readonly property int defaultListZoom: 0
     readonly property real gridTilePadding: Style.spacingM
-    readonly property real gridTileVerticalPadding: Style.spacingM
+    readonly property real gridTileVerticalPadding: Style.spacingM + densityStepS
     readonly property real gridTileRadius: Style.cornerRadiusL
     readonly property real gridGap: Style.spacingM
     readonly property real gridNameSpacing: Style.spacingXS
@@ -51,9 +55,9 @@ Singleton {
     readonly property real previewViewMinWidth: Style.sidebarWidth
     readonly property real previewDrawerRatio: 0.35
 
-    readonly property real listRowHeight: Style.minimumTouchTargetSize
+    readonly property real listRowHeight: Style.minimumTouchTargetSize + densityStepM
     readonly property real listRowPadding: Style.spacingL
-    readonly property real listRowGap: Style.spacingM
+    readonly property real listRowGap: Style.spacingM + densityStepS
     readonly property real nameColumnMinWidth: Style.spacingXL * 6
 
     function iconSizesFor(viewMode) {
@@ -89,10 +93,10 @@ Singleton {
     readonly property real sidebarWidth: Style.sidebarWidth
     readonly property int sidebarBreakpoint: Style.mediumBreakpoint
     readonly property real sidebarPadding: Style.spacingM
-    readonly property real sidebarIconSize: Style.buttonHeightXS
-    readonly property real sidebarRowHeight: Style.buttonHeightS
+    readonly property real sidebarIconSize: Style.buttonHeightXS + densityStepS
+    readonly property real sidebarRowHeight: Style.buttonHeightS + densityStepM
     readonly property real sidebarRowRadius: Style.cornerRadiusM
-    readonly property real sidebarRowGap: Style.groupedListGap
+    readonly property real sidebarRowGap: Math.max(0, Style.groupedListGap + densityLevel * Style.spacingXXS)
     readonly property real sidebarGlyphSize: Style.iconSizeMedium
     readonly property real usageWarnRatio: 0.9
     readonly property real paneRadius: Style.windowRadius
