@@ -55,7 +55,7 @@ FocusScope {
     readonly property var iconSizes: FileBrowserMetrics.iconSizesFor(viewMode)
     readonly property real iconSize: iconSizes[Math.max(0, Math.min(iconSizes.length - 1, zoom))]
     readonly property string fittingKey: {
-        let available = width - iconSize - FileBrowserMetrics.listRowPadding * 3 - FileBrowserMetrics.nameColumnMinWidth;
+        let available = width - iconSize - FileBrowserMetrics.listRowPadding * 2 - FileBrowserMetrics.listRowGap - FileBrowserMetrics.nameColumnMinWidth;
         const kept = [];
         for (const id of listColumns) {
             const needed = columnWidthFor(id) + FileBrowserMetrics.columnGap;
@@ -798,7 +798,7 @@ FocusScope {
         sortKey: body.sortKey
         sortDescending: body.sortDescending
         columnSortKeys: body.columnSortKeys
-        nameIndent: body.iconSize + FileBrowserMetrics.listRowPadding * 2
+        nameIndent: body.iconSize + FileBrowserMetrics.listRowPadding + FileBrowserMetrics.listRowGap
         backgroundColor: body.surfaceColor
         onSortRequested: key => body.sortRequested(key)
         onColumnsMenuRequested: (pointX, pointY) => {

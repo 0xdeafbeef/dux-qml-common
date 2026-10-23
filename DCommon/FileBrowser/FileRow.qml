@@ -116,7 +116,7 @@ FileItemSurface {
         id: nameLabel
 
         anchors.left: visual.right
-        anchors.leftMargin: FileBrowserMetrics.listRowPadding
+        anchors.leftMargin: FileBrowserMetrics.listRowGap
         anchors.right: chevron.left
         anchors.rightMargin: FileBrowserMetrics.columnGap
         anchors.verticalCenter: parent.verticalCenter
@@ -132,7 +132,7 @@ FileItemSurface {
 
     Loader {
         anchors.left: visual.right
-        anchors.leftMargin: FileBrowserMetrics.listRowPadding
+        anchors.leftMargin: FileBrowserMetrics.listRowGap
         anchors.right: chevron.left
         anchors.rightMargin: FileBrowserMetrics.columnGap
         anchors.verticalCenter: parent.verticalCenter

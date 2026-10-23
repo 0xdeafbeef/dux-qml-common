@@ -18,6 +18,8 @@ StyledButton {
     property real ringValue: -1
     property bool busy: false
     property bool selected: false
+    property bool expandable: false
+    property bool expanded: false
 
     property string dropPath: ""
     property bool springLoad: true
@@ -156,6 +158,22 @@ StyledButton {
                 font.pixelSize: Style.fontSizeSmall
                 wrapMode: Text.NoWrap
                 elide: Text.ElideMiddle
+            }
+        }
+
+        DIcon {
+            visible: row.expandable
+            name: "expand_more"
+            size: FileBrowserMetrics.sidebarGlyphSize
+            color: row.contentColor
+            rotation: row.expanded ? 180 : 0
+
+            Behavior on rotation {
+                enabled: FileBrowserMetrics.animationsEnabled
+                DAnim {
+                    duration: Style.expressiveDurations.expressiveFastSpatial
+                    easing.bezierCurve: Style.expressiveCurves.expressiveDefaultSpatial
+                }
             }
         }
     }
