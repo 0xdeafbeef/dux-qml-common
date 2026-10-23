@@ -13,6 +13,7 @@ StyledButton {
     property string tooltipText: ""
     property string iconName: ""
     property string glyph: ""
+    property string path: ""
     property string actionIcon: ""
     property string actionTooltip: ""
     property real ringValue: -1
@@ -30,6 +31,7 @@ StyledButton {
     signal middleClicked
 
     readonly property bool showAction: actionIcon !== "" && (hovered || actionArea.containsMouse)
+    readonly property var look: row.path !== "" && Host.appearance ? Host.appearance.lookup(row.path) : null
     readonly property color contentColor: {
         if (!enabled)
             return Style.onSurface_38;
@@ -100,12 +102,35 @@ StyledButton {
                 }
 
                 FileIcon {
+                    id: placeIcon
+
                     anchors.centerIn: parent
                     visible: !row.busy && !row.showAction
                     iconName: row.iconName
+                    iconOverride: row.look?.icon ?? ""
                     glyph: row.glyph
                     size: FileBrowserMetrics.sidebarGlyphSize
                     color: Style.primary
+                    tint: row.look?.color || "transparent"
+                }
+
+                Loader {
+                    anchors.right: placeIcon.right
+                    anchors.bottom: placeIcon.bottom
+                    visible: !row.busy && !row.showAction
+                    active: (row.look?.emblem ?? "") !== ""
+                    sourceComponent: Rectangle {
+                        width: FileBrowserMetrics.emblemMinSize
+                        height: width
+                        radius: Style.fullRadius(width, height)
+                        color: Style.surfaceContainerLowest
+
+                        DSVGIcon {
+                            anchors.centerIn: parent
+                            source: Paths.resolveIconPath(row.look?.emblem ?? "")
+                            size: parent.width - Style.spacingXS
+                        }
+                    }
                 }
 
                 DIcon {
