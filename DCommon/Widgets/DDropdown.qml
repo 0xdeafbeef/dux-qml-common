@@ -15,27 +15,38 @@ FocusScope {
     property string description: ""
     property string currentValue: ""
     property var options: []
+    // Parallel to options: when set, currentValue and valueChanged allow sharing a label.
+    property var optionValues: []
     property var optionIcons: []
     property var optionImages: []
     property bool enableFuzzySearch: false
     property var optionIconMap: ({})
     property var optionImageMap: ({})
     property var optionColorMap: ({})
+    readonly property var optionKeys: optionValues.length > 0 ? optionValues : options
+
+    function labelOf(key) {
+        if (optionValues.length === 0)
+            return key;
+        const index = optionValues.indexOf(key);
+        return index >= 0 ? options[index] : key;
+    }
 
     function rebuildIconMap() {
         const icons = {};
         const images = {};
-        for (let i = 0; i < options.length; i++) {
+        for (let i = 0; i < optionKeys.length; i++) {
             if (optionIcons.length > i)
-                icons[options[i]] = optionIcons[i];
+                icons[optionKeys[i]] = optionIcons[i];
             if (optionImages.length > i && optionImages[i])
-                images[options[i]] = optionImages[i];
+                images[optionKeys[i]] = optionImages[i];
         }
         optionIconMap = icons;
         optionImageMap = images;
     }
 
     onOptionsChanged: rebuildIconMap()
+    onOptionValuesChanged: rebuildIconMap()
     onOptionIconsChanged: rebuildIconMap()
     onOptionImagesChanged: rebuildIconMap()
 
@@ -76,9 +87,9 @@ FocusScope {
     property int selectedIndex: -1
     readonly property var filteredOptions: {
         if (!enableFuzzySearch || searchQuery.length === 0)
-            return options;
+            return optionKeys;
         if (!fzfFinder)
-            return options;
+            return optionKeys;
         return fzfFinder.find(searchQuery).map(r => r.item);
     }
 
@@ -112,8 +123,8 @@ FocusScope {
     }
 
     function initFinder() {
-        fzfFinder = new Fzf.Finder(root.options, {
-            "selector": option => option,
+        fzfFinder = new Fzf.Finder(root.optionKeys, {
+            "selector": key => root.labelOf(key),
             "limit": 50,
             "casing": "case-insensitive",
             "sort": true,
@@ -212,7 +223,7 @@ FocusScope {
         closeTimer.stop();
         root.menuClosing = false;
         menu.visible = true;
-        const currentIndex = root.options.indexOf(root.currentValue);
+        const currentIndex = root.optionKeys.indexOf(root.currentValue);
         scrollMenuTo(currentIndex >= 0 ? currentIndex : 0, ListView.Beginning);
         root.selectedIndex = root.filteredOptions.indexOf(root.currentValue);
         transientSurfaceTracker?.setActive(root, true, menu);
@@ -308,7 +319,7 @@ FocusScope {
         Accessible.ignored: root.Accessible.ignored
 
         Accessible.role: Accessible.ComboBox
-        Accessible.name: root.Accessible.name || root.text || root.currentValue
+        Accessible.name: root.Accessible.name || root.text || root.labelOf(root.currentValue)
         Accessible.description: root.Accessible.description || root.description
         onClicked: root.openDropdownMenu()
         Keys.onDownPressed: event => {
@@ -405,14 +416,14 @@ FocusScope {
                 sourceComponent: AppIconRenderer {
                     iconValue: triggerImage.imageValue
                     iconSize: Style.iconSizeMedium
-                    fallbackText: root.currentValue.charAt(0).toUpperCase()
+                    fallbackText: root.labelOf(root.currentValue).charAt(0).toUpperCase()
                 }
             }
 
             StyledText {
                 anchors.verticalCenter: parent.verticalCenter
                 visible: root.showLabel
-                text: root.currentValue !== "" ? root.currentValue : root.emptyText
+                text: root.currentValue !== "" ? root.labelOf(root.currentValue) : root.emptyText
                 font.pixelSize: Style.fontSizeMedium
                 color: !root.enabled ? Style.onSurface_38 : (root.currentValue !== "" ? Style.surfaceText : Style.onSurfaceVariant)
                 width: contentRow.width - (triggerSwatch.visible ? triggerSwatch.width + contentRow.spacing : 0) - (triggerIcon.visible ? triggerIcon.width + contentRow.spacing : 0) - (triggerImage.visible ? triggerImage.width + contentRow.spacing : 0)
@@ -722,7 +733,7 @@ FocusScope {
 
                                 focusPolicy: Qt.NoFocus
                                 Accessible.role: Accessible.ListItem
-                                Accessible.name: modelData
+                                Accessible.name: root.labelOf(modelData)
                                 Accessible.selected: isCurrentValue
                                 onClicked: {
                                     root.currentValue = modelData;
@@ -803,13 +814,13 @@ FocusScope {
                                             iconValue: delegateRoot.imageValue
                                             iconSize: Style.iconSizeMedium
                                             iconColor: delegateRoot.contentColor
-                                            fallbackText: String(delegateRoot.modelData).charAt(0).toUpperCase()
+                                            fallbackText: root.labelOf(delegateRoot.modelData).charAt(0).toUpperCase()
                                         }
                                     }
 
                                     StyledText {
                                         anchors.verticalCenter: parent.verticalCenter
-                                        text: delegateRoot.modelData
+                                        text: root.labelOf(delegateRoot.modelData)
                                         font.pixelSize: Style.fontSizeMedium
                                         color: delegateRoot.contentColor
                                         font.weight: delegateRoot.isCurrentValue ? Style.fontWeightMedium : Style.fontWeight
