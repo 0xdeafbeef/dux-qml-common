@@ -23,30 +23,39 @@ FocusScope {
     property var optionIconMap: ({})
     property var optionImageMap: ({})
     property var optionColorMap: ({})
-    readonly property var optionKeys: optionValues.length > 0 ? optionValues : options
+    // Handlers can fire mid-initialisation before this has a value, so rebuild from it, not from its inputs
+    readonly property var optionKeys: {
+        if (Array.isArray(optionValues) && optionValues.length > 0)
+            return optionValues;
+        return Array.isArray(options) ? options : [];
+    }
 
     function labelOf(key) {
-        if (optionValues.length === 0)
+        if (!Array.isArray(optionValues) || optionValues.length === 0)
             return key;
         const index = optionValues.indexOf(key);
-        return index >= 0 ? options[index] : key;
+        if (index < 0 || !Array.isArray(options))
+            return key;
+        return options[index] ?? key;
     }
 
     function rebuildIconMap() {
         const icons = {};
         const images = {};
-        for (let i = 0; i < optionKeys.length; i++) {
-            if (optionIcons.length > i)
-                icons[optionKeys[i]] = optionIcons[i];
-            if (optionImages.length > i && optionImages[i])
-                images[optionKeys[i]] = optionImages[i];
+        const keys = Array.isArray(optionKeys) ? optionKeys : [];
+        const iconList = Array.isArray(optionIcons) ? optionIcons : [];
+        const imageList = Array.isArray(optionImages) ? optionImages : [];
+        for (let i = 0; i < keys.length; i++) {
+            if (iconList.length > i)
+                icons[keys[i]] = iconList[i];
+            if (imageList.length > i && imageList[i])
+                images[keys[i]] = imageList[i];
         }
         optionIconMap = icons;
         optionImageMap = images;
     }
 
-    onOptionsChanged: rebuildIconMap()
-    onOptionValuesChanged: rebuildIconMap()
+    onOptionKeysChanged: rebuildIconMap()
     onOptionIconsChanged: rebuildIconMap()
     onOptionImagesChanged: rebuildIconMap()
 
@@ -115,7 +124,7 @@ FocusScope {
 
     readonly property int menuHeight: {
         let h = root.enableFuzzySearch ? root.triggerHeight + Style.spacingXS : 0;
-        if (root.options.length === 0 && root.emptyText !== "")
+        if (root.optionKeys.length === 0 && root.emptyText !== "")
             h += menuItemHeight;
         else
             h += Math.min(root.filteredOptions.length, 10) * (menuItemHeight + menuSpacing);
@@ -206,7 +215,7 @@ FocusScope {
     }
 
     function showDropdownMenu() {
-        if (root.options.length === 0)
+        if (root.optionKeys.length === 0)
             return;
         if (root.menuOpen)
             return;
@@ -693,7 +702,7 @@ FocusScope {
                         Item {
                             width: parent.width
                             height: root.menuItemHeight
-                            visible: root.options.length === 0 && root.emptyText !== ""
+                            visible: root.optionKeys.length === 0 && root.emptyText !== ""
 
                             StyledText {
                                 anchors.left: parent.left
@@ -712,9 +721,9 @@ FocusScope {
                             id: listView
 
                             width: parent.width
-                            height: parent.height - (root.enableFuzzySearch ? searchContainer.height + Style.spacingXS : 0) - (root.options.length === 0 && root.emptyText !== "" ? root.menuItemHeight : 0)
+                            height: parent.height - (root.enableFuzzySearch ? searchContainer.height + Style.spacingXS : 0) - (root.optionKeys.length === 0 && root.emptyText !== "" ? root.menuItemHeight : 0)
                             clip: true
-                            visible: root.options.length > 0
+                            visible: root.optionKeys.length > 0
                             model: ScriptModel {
                                 values: root.filteredOptions
                             }
