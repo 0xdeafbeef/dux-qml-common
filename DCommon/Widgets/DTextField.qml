@@ -491,7 +491,7 @@ StyledRect {
         selectedTextColor: Style.onPrimary
         horizontalAlignment: TextInput.AlignLeft
         verticalAlignment: TextInput.AlignVCenter
-        selectByMouse: !root.ignoreLeftRightKeys
+        selectByMouse: true
         echoMode: root.passwordVisible && root.echoMode === TextInput.Password ? TextInput.Normal : root.echoMode
         clip: true
         activeFocusOnTab: root.enabled && !root.imeShielded
