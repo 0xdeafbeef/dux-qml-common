@@ -22,7 +22,8 @@ Item {
     readonly property var pickedEntry: picked.length === 1 ? picked[0] : null
     readonly property string lookaheadPath: pickedEntry?.isDir ? pickedEntry.path : ""
     readonly property bool trailingPane: picked.length > 1 || (pickedEntry !== null && !pickedEntry.isDir)
-    readonly property real columnWidth: Layout.columnWidth(strip.width, FileBrowserMetrics.previewPaneWidth, FileBrowserMetrics.columnMinPaneWidth, FileBrowserMetrics.columnPaneWidth)
+    readonly property real fittedWidth: Math.max(FileBrowserMetrics.columnMinPaneWidth, Layout.columnWidth(strip.width, FileBrowserMetrics.previewPaneWidth, FileBrowserMetrics.columnMinPaneWidth, FileBrowserMetrics.columnPaneWidth) * body.columnZoomFactor)
+    readonly property real columnWidth: body.columnPaneWidth > 0 ? Math.max(FileBrowserMetrics.columnMinPaneWidth, Math.min(FileBrowserMetrics.columnPaneMaxWidth, body.columnPaneWidth)) : fittedWidth
     readonly property real activeEnd: (activeDepth + 1) * columnWidth
     readonly property real trailingWidth: slotEnd - activeEnd
     readonly property var activeList: activeColumn?.list ?? null
@@ -442,6 +443,7 @@ Item {
                 width: columns.columnWidth - Style.dividerWidth
                 selection: column.active ? columns.body.selection : column.ownSelection
                 iconSize: columns.body.iconSize
+                zoom: columns.body.zoom
                 renamingPath: column.active ? columns.body.renamingPath : ""
                 cutSet: columns.body.cutSet
                 columnIds: []
@@ -549,7 +551,34 @@ Item {
                 anchors.top: parent.top
                 anchors.bottom: parent.bottom
                 width: Style.dividerWidth
-                color: Style.outlineVariant
+                color: divider.containsMouse || divider.pressed ? Style.primary : Style.outlineVariant
+            }
+
+            MouseArea {
+                id: divider
+
+                property real pressX: 0
+                property real pressWidth: 0
+
+                z: 10
+                anchors.right: parent.right
+                anchors.top: parent.top
+                anchors.bottom: parent.bottom
+                width: Style.spacingS
+                hoverEnabled: true
+                preventStealing: true
+                cursorShape: Qt.SizeHorCursor
+                acceptedButtons: Qt.LeftButton
+                onPressed: mouse => {
+                    pressX = mapToItem(null, mouse.x, 0).x;
+                    pressWidth = columns.columnWidth;
+                }
+                onPositionChanged: mouse => {
+                    if (!pressed)
+                        return;
+                    const delta = (mapToItem(null, mouse.x, 0).x - pressX) / (column.depth + 1);
+                    columns.body.columnPaneResizeRequested(pressWidth + (columns.mirrored ? -delta : delta));
+                }
             }
         }
     }

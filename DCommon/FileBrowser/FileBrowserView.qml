@@ -20,6 +20,8 @@ FocusScope {
     property string viewMode: "list"
     property int gridZoom: 1
     property int listZoom: 1
+    property int columnZoom: FileBrowserMetrics.defaultColumnZoom
+    property real columnPaneWidth: 0
     property var listColumns: ["size", "modified"]
     property var columnWidths: ({})
     property bool multiSelect: true
@@ -84,6 +86,7 @@ FocusScope {
     signal sortRequested(string key)
     signal zoomRequested(string viewMode, int level)
     signal columnResizeRequested(string id, real width)
+    signal columnPaneResizeRequested(real width)
     signal previewToggleRequested
     signal previewResized(real width)
     signal focusRequested
@@ -422,6 +425,8 @@ FocusScope {
                 viewMode: root.viewMode
                 gridZoom: root.gridZoom
                 listZoom: root.listZoom
+                columnZoom: root.columnZoom
+                columnPaneWidth: root.columnPaneWidth
                 listColumns: root.listColumns
                 columnWidths: root.columnWidths
                 sortKey: root.sortKey
@@ -469,6 +474,7 @@ FocusScope {
                 onSortRequested: key => root.sortRequested(key)
                 onZoomRequested: (mode, level) => root.zoomRequested(mode, level)
                 onColumnResizeRequested: (id, width) => root.columnResizeRequested(id, width)
+                onColumnPaneResizeRequested: width => root.columnPaneResizeRequested(width)
                 onDirectoryReplaced: {
                     if (!root.directory.loading)
                         root._applyPendingReveal();

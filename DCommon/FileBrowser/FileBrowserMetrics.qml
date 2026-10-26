@@ -30,6 +30,9 @@ Singleton {
     readonly property var listIconSizes: [Style.iconSizeMedium, Style.iconSize, Style.iconSizeLarge, Style.iconSizeLarge * 1.25, Style.iconSizeLarge * 1.5, Style.iconSizeLarge * 2]
     readonly property int defaultGridZoom: 2
     readonly property int defaultListZoom: 0
+    readonly property int defaultColumnZoom: 2
+    readonly property var columnZoomFactors: [0.7, 0.85, 1, 1.15, 1.35, 1.6]
+    readonly property real columnPaneMaxWidth: Style.sidebarWidth * 2.5
     readonly property real gridTilePadding: Style.spacingM
     readonly property real gridTileVerticalPadding: Style.spacingM + densityStepS
     readonly property real gridTileRadius: Style.cornerRadiusL
@@ -58,6 +61,8 @@ Singleton {
     readonly property real listRowHeight: Style.minimumTouchTargetSize + densityStepM
     readonly property real listRowPadding: Style.spacingL
     readonly property real listRowGap: Style.spacingM + densityStepS
+    readonly property real listCompactGap: Style.spacingS + densityStepS
+    readonly property real listCompactRowHeight: Style.minimumTouchTargetSize * 0.75
     readonly property real nameColumnMinWidth: Style.spacingXL * 6
 
     function iconSizesFor(viewMode) {
@@ -68,8 +73,15 @@ Singleton {
         return viewMode === "grid" ? defaultGridZoom : defaultListZoom;
     }
 
-    function listRowHeightFor(iconSize) {
+    function listRowHeightFor(iconSize, compact) {
+        if (compact)
+            return Math.max(iconSize + listCompactGap * 2, listCompactRowHeight);
         return Math.max(listRowHeight, iconSize + listRowGap * 2);
+    }
+
+    function columnZoomFactor(level) {
+        const factors = columnZoomFactors;
+        return factors[Math.max(0, Math.min(factors.length - 1, level))];
     }
     readonly property real columnHeaderHeight: Style.buttonHeightXS
     readonly property real columnHeaderPadding: Style.spacingS

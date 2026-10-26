@@ -9,6 +9,7 @@ DListView {
 
     property SelectionModel selection: null
     property real iconSize: Style.iconSize
+    property int zoom: FileBrowserMetrics.defaultListZoom
     property string renamingPath: ""
     property var cutSet: ({})
     property var childCounts: ({})
@@ -22,7 +23,8 @@ DListView {
     property string nameHighlight: ""
 
     readonly property int columnsPerRow: 1
-    readonly property real rowHeight: FileBrowserMetrics.listRowHeightFor(iconSize)
+    readonly property bool compact: zoom <= 0
+    readonly property real rowHeight: FileBrowserMetrics.listRowHeightFor(iconSize, compact)
     readonly property real rowPitch: rowHeight + spacing
     readonly property real contentOrigin: headerItem ? headerItem.y + headerItem.height : originY
 

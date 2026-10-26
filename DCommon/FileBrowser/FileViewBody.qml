@@ -14,6 +14,8 @@ FocusScope {
     property string viewMode: "list"
     property int gridZoom: 1
     property int listZoom: 1
+    property int columnZoom: FileBrowserMetrics.defaultColumnZoom
+    property real columnPaneWidth: 0
     property var listColumns: ["size", "modified"]
     property var columnWidths: ({})
     property string sortKey: "name"
@@ -52,6 +54,7 @@ FocusScope {
     readonly property bool columnsMode: viewMode === "columns" && directoryPool !== null
     readonly property bool columnsScroll: header !== null && viewMode === "list"
     readonly property int zoom: viewMode === "grid" ? gridZoom : listZoom
+    readonly property real columnZoomFactor: FileBrowserMetrics.columnZoomFactor(columnZoom)
     readonly property var iconSizes: FileBrowserMetrics.iconSizesFor(viewMode)
     readonly property real iconSize: iconSizes[Math.max(0, Math.min(iconSizes.length - 1, zoom))]
     readonly property string fittingKey: {
@@ -97,6 +100,7 @@ FocusScope {
     signal sortRequested(string key)
     signal zoomRequested(string viewMode, int level)
     signal columnResizeRequested(string id, real width)
+    signal columnPaneResizeRequested(real width)
     signal previewKeyRequested(string action, int step)
     signal directoryReplaced
     signal filterRequested(string text)
@@ -276,8 +280,11 @@ FocusScope {
     }
 
     function zoomBy(step) {
-        const level = Math.max(0, Math.min(iconSizes.length - 1, zoom + step));
-        if (level === zoom)
+        const inColumns = viewMode === "columns";
+        const current = inColumns ? columnZoom : zoom;
+        const levels = inColumns ? FileBrowserMetrics.columnZoomFactors.length : iconSizes.length;
+        const level = Math.max(0, Math.min(levels - 1, current + step));
+        if (level === current)
             return;
         zoomRequested(viewMode, level);
     }
@@ -717,6 +724,7 @@ FocusScope {
 
             selection: body.selection
             iconSize: body.iconSize
+            zoom: body.zoom
             renamingPath: body.renamingPath
             cutSet: body.cutSet
             childCounts: body.childCounts
@@ -849,7 +857,7 @@ FocusScope {
         anchors.fill: viewLoader
         anchors.topMargin: body.view?.headerItem?.height ?? 0
         visible: body.slowListing && !body.columnsMode
-        rowHeight: body.viewMode === "grid" ? body.iconSize : FileBrowserMetrics.listRowHeightFor(body.iconSize)
+        rowHeight: body.viewMode === "grid" ? body.iconSize : FileBrowserMetrics.listRowHeightFor(body.iconSize, body.zoom <= 0)
     }
 
     StyledText {
