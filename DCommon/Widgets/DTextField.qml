@@ -52,6 +52,7 @@ StyledRect {
     property real focusedBorderWidth: expressive ? (Style.focusRingWidth > 0 ? Math.max(Style.outlineWidth, Style.focusRingWidth) : Style.layerOutlineWidth) : Style.outlineWidthFocused
     property real cornerRadius: expressive ? Style.cornerRadiusXL : Style.cornerRadiusXS
     property real controlHeight: expressive ? Style.buttonHeightM : Style.iconButtonSize
+    property real fieldHeight: Style.fieldHeight
     property bool expressive: false
     property bool morph: false
     property bool busy: false
@@ -149,7 +150,7 @@ StyledRect {
     readonly property color labelTargetColor: !enabled ? Style.onSurface_38 : isError ? (fieldHover.hovered && !root.inputFocused ? Style.onErrorContainer : Style.error) : root.inputFocused ? Style.primary : fieldHover.hovered ? Style.onSurface : Style.onSurfaceVariant
 
     width: Style.fieldDefaultWidth
-    implicitHeight: outlined ? Math.max(controlHeight, textInput.contentHeight + topPadding + bottomPadding) + containerTop + supportingHeight : expressive ? controlHeight + supportingHeight : Style.fieldHeight + (labelText ? labelBandHeight : 0)
+    implicitHeight: outlined ? Math.max(controlHeight, textInput.contentHeight + topPadding + bottomPadding) + containerTop + supportingHeight : expressive ? controlHeight + supportingHeight : fieldHeight + (labelText ? labelBandHeight : 0)
     height: implicitHeight
     radius: cornerRadius
     color: outlined || expressive ? "transparent" : Style.foregroundColor(backgroundColor, !usePopupTransparency)
