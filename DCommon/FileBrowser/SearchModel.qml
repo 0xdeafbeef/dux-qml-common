@@ -2,6 +2,7 @@ pragma ComponentBehavior: Bound
 
 import QtQuick
 import qs.DCommon.Common
+import "NaturalSort.js" as NaturalSort
 
 QtObject {
     id: root
@@ -214,10 +215,7 @@ QtObject {
         let order = 0;
         switch (sortKey) {
         case "name":
-            order = a.name.localeCompare(b.name, undefined, {
-                "sensitivity": "base",
-                "numeric": true
-            });
+            order = a.nameKey.localeCompare(b.nameKey);
             break;
         case "size":
             order = a.size - b.size;
@@ -243,6 +241,7 @@ QtObject {
 
     function _insert(entry) {
         entry.seq = _seq++;
+        entry.nameKey = NaturalSort.key(entry.name);
         let low = 0;
         let high = _rows.length;
         while (low < high) {
